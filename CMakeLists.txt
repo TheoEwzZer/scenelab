@@ -1,113 +1,39 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.10.0)
+project(Learning-OpenGL VERSION 0.1.0 LANGUAGES C CXX)
 
-project(scenelab LANGUAGES C CXX)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wpedantic")
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+file(GLOB_RECURSE SOURCES src/**.cpp)
 
-set(FETCHCONTENT_BASE_DIR ${CMAKE_SOURCE_DIR}/external)
 
-include(FetchContent)
+add_subdirectory(external/glfw)
+add_subdirectory(external/glad)
 
-FetchContent_Declare(
-  glfw
-  GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG 3.4
+# ImGui
+set(IMGUI_DIR external/imgui)
+set(IMGUI_SOURCES
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(glfw)
+include_directories(${IMGUI_DIR})
 
-FetchContent_Declare(
-  glad
-  GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-  GIT_TAG v2.0.8
+
+# ImGuizmo
+set(IMGUIZMO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuizmo)
+set(IMGUIZMO_SOURCES
+    ${IMGUIZMO_DIR}/ImGuizmo.cpp
 )
-FetchContent_MakeAvailable(glad)
+include_directories(${IMGUIZMO_DIR})
 
-find_package(Python3 REQUIRED)
-execute_process(
-  COMMAND ${Python3_EXECUTABLE} -m pip install glad2
-  RESULT_VARIABLE PIP_RESULT
-)
-if(NOT PIP_RESULT EQUAL 0)
-  message(FATAL_ERROR "Failed to install glad2")
-endif()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/external/stb_image/include)
+add_executable(Learning-OpenGL ${SOURCES} ${IMGUI_SOURCES} ${IMGUIZMO_SOURCES})
 
-execute_process(
-  COMMAND ${Python3_EXECUTABLE} -m glad --api gl:core=3.3 --out-path ${CMAKE_BINARY_DIR}/glad c
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  RESULT_VARIABLE GLAD_RESULT
-)
-if(NOT GLAD_RESULT EQUAL 0)
-  message(FATAL_ERROR "Failed to generate GLAD files")
-endif()
-
-add_library(glad STATIC
-  ${CMAKE_BINARY_DIR}/glad/src/gl.c
-)
-target_include_directories(glad PUBLIC ${CMAKE_BINARY_DIR}/glad/include)
-
-FetchContent_Declare(
-  glm
-  GIT_REPOSITORY https://github.com/g-truc/glm.git
-  GIT_TAG 1.0.1
-)
-set(GLM_TEST_ENABLE OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(glm)
-
-add_executable(scenelab
-  src/main.cpp
-)
-
-target_include_directories(scenelab PRIVATE ${CMAKE_SOURCE_DIR}/include)
-
-target_link_libraries(scenelab PRIVATE
-  glfw
-  glad
-  glm::glm
-  imgui
-  imgui_backend
-)
-
-if(UNIX)
-  find_package(X11 REQUIRED)
-  target_link_libraries(scenelab PRIVATE dl pthread X11::X11)
-endif()
-
-if(MSVC)
-  target_compile_options(scenelab PRIVATE $<$<CONFIG:Debug>:/W4 /permissive->)
-else()
-  target_compile_options(scenelab PRIVATE $<$<CONFIG:Debug>:-Wall -Wextra -Wpedantic>)
-endif()
-
-FetchContent_Declare(
-  imgui
-  GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG v1.92.3
-)
-FetchContent_MakeAvailable(imgui)
-
-add_library(imgui STATIC
-  ${imgui_SOURCE_DIR}/imgui.cpp
-  ${imgui_SOURCE_DIR}/imgui_demo.cpp
-  ${imgui_SOURCE_DIR}/imgui_draw.cpp
-  ${imgui_SOURCE_DIR}/imgui_tables.cpp
-  ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-)
-target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
-
-add_library(imgui_backend STATIC
-  ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-  ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-)
-target_include_directories(imgui_backend PUBLIC
-  ${imgui_SOURCE_DIR}
-  ${imgui_SOURCE_DIR}/backends
-  ${CMAKE_BINARY_DIR}/glad/include
-)
-target_link_libraries(imgui_backend PUBLIC imgui glfw glad)
-target_compile_definitions(imgui_backend PUBLIC "IMGUI_IMPL_OPENGL_LOADER_GLAD")
+target_link_libraries(Learning-OpenGL glfw glad)
