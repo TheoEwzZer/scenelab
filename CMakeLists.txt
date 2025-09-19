@@ -11,6 +11,7 @@ file(GLOB_RECURSE SOURCES src/**.cpp)
 
 add_subdirectory(external/glfw)
 add_subdirectory(external/glad)
+add_subdirectory(external/glm)
 
 # ImGui
 set(IMGUI_DIR external/imgui)
