@@ -1,3 +1,26 @@
+# Build directories
+build/
+cmake-build-*
+
+# Visual Studio / MSVC
+*.vcxproj*
+*.sln
+*.obj
+*.o
+*.pch
+*.pdb
+*.ilk
+
+# IDE/editor caches
+.idea/
+.vscode/
+.cursor/
+*.cache
+.DS_Store
+
+# FetchContent population
+external/
+
 # Prerequisites
 *.d
 
