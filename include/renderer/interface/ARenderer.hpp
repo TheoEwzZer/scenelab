@@ -44,6 +44,12 @@ public:
     virtual bool shouldWindowClose();
     void addKeyCallback(int key, int action, std::function<void()> callback);
     void addCursorCallback(std::function<void(double, double)> callback);
+    void addDropCallback(
+        std::function<void(const std::vector<std::string> &paths,
+            double mouseX, double mouseY)>
+            callback);
+
+    GLFWwindow *getWindow() const { return m_window; }
 
 protected:
     GLFWwindow *m_window;
