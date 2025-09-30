@@ -2,7 +2,7 @@
 #include <glm/glm.hpp>
 
 class GameObject {
-private:
+protected:
     glm::vec3 m_position { 0.0f }, m_rotation { 0.0f }, m_scale { 1.0f };
     mutable glm::mat4 m_modelMatrix { 1.0f };
     mutable bool m_transformDirty = true;
