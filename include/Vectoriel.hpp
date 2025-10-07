@@ -5,7 +5,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "Vectoriel.hpp"
 #include "GameObject.hpp"
+#include "renderer/interface/ARenderer.hpp"
+
+class App;
 
 namespace Vect {
 
@@ -77,7 +81,7 @@ namespace Primitive {
 
     class RegularPolygon : public ASimplePrimitive {
     public:
-        RegularPolygon(uint32_t segments);
+        RegularPolygon(uint32_t segments = 5);
         ~RegularPolygon();
 
         std::vector<float> generateGLVertices() const override;
@@ -97,7 +101,8 @@ namespace Primitive {
 
     class Ellipse : public RegularPolygon {
     public:
-        Ellipse(const glm::vec2 &radius, uint32_t resolution = 100);
+        Ellipse(const glm::vec2 &radius = { 0.5f, 0.25f },
+            uint32_t resolution = 100);
         ~Ellipse();
 
         void setResolution(uint32_t resolution);
@@ -106,13 +111,13 @@ namespace Primitive {
 
     class Circle : public Ellipse {
     public:
-        Circle(float radius, uint32_t resolution = 100);
+        Circle(float radius = 0.5f, uint32_t resolution = 100);
         ~Circle();
     };
 
     class Rectangle : public RegularPolygon {
     public:
-        Rectangle(const glm::vec2 &size);
+        Rectangle(const glm::vec2 &size = { 0.5f, 0.25f });
         ~Rectangle();
     };
 
@@ -124,7 +129,7 @@ namespace Primitive {
 
     class Square : public Rectangle {
     public:
-        Square(float size);
+        Square(float size = 0.5f);
         ~Square();
     };
 
@@ -145,7 +150,8 @@ namespace Shape {
     protected:
         std::string m_type;
         float m_angle;
-        std::vector<std::unique_ptr<Vect::Primitive::ASimplePrimitive>> m_primitives;
+        std::vector<std::unique_ptr<Vect::Primitive::ASimplePrimitive>>
+            m_primitives;
     };
 
     class House : public AShape {
@@ -161,11 +167,55 @@ namespace Shape {
     };
 
     class LetterA : public AShape {
-        public:
+    public:
         LetterA(float width = 0.05f);
         ~LetterA();
     };
 
 }
+
+class UIDrawer {
+public:
+    UIDrawer();
+    ~UIDrawer();
+
+    void renderUI(App *app);
+
+protected:
+    float m_outlineWidth;
+    float m_outlineColor[4];
+    float m_fillColor[4];
+    float m_localScale[2];
+    float m_localPosition[2];
+    float m_localRotation;
+    bool m_fill;
+
+    float m_line_pointA[2];
+    float m_line_pointB[2];
+    float m_line_width;
+
+    float m_circle_radius;
+
+    ARenderer *rendererRef;
+
+    template <typename T, class... Args>
+    T instanciatePrimitiveWAttributes(Args &&...args) const
+    {
+        T primitive(std::forward<Args>(args)...);
+
+        primitive.setFillColor(RGBAColor(
+            m_fillColor[0], m_fillColor[1], m_fillColor[2], m_fillColor[3]));
+        primitive.setFilled(m_fill);
+        primitive.setOutlineWidth(m_outlineWidth);
+        primitive.setOutlineColor(RGBAColor(m_outlineColor[0],
+            m_outlineColor[1], m_outlineColor[2], m_outlineColor[3]));
+        primitive.setLocalPosition(
+            glm::vec2(m_localPosition[0], m_localPosition[1]));
+        primitive.setLocalRotation(m_localRotation);
+        primitive.setLocalScale(glm::vec2(m_localScale[0], m_localScale[1]));
+
+        return (primitive);
+    }
+};
 
 }

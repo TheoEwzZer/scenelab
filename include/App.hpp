@@ -11,6 +11,7 @@
 
 #include "GameObject.hpp"
 #include "Camera.hpp"
+#include "Vectoriel.hpp"
 #include "renderer/interface/ARenderer.hpp"
 
 class App {
@@ -27,7 +28,7 @@ class App {
     glm::vec2 mouseDelta { 0.0f };
     glm::vec2 prevMousePos { 0.0f };
 
-    unsigned int selectedObjectIndex = 1;
+    unsigned int selectedObjectIndex = 0;
 
 private:
     std::vector<GameObject> m_gameObjects;
@@ -37,6 +38,8 @@ private:
     void render();
 
     void selectedTransformUI();
+
+    Vect::UIDrawer vectorial_ui;
 
 public:
     explicit App();
@@ -48,4 +51,6 @@ public:
     void run();
 
     std::unique_ptr<ARenderer> m_renderer;
+
+    friend Vect::UIDrawer;
 };

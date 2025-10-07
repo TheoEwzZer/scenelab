@@ -25,7 +25,7 @@ App::~App() {}
 void App::init()
 {
     // Create game objects
-    m_gameObjects.resize(2);
+    m_gameObjects.resize(10);
 
     std::vector<float> vertices = {
         -0.5f,
@@ -771,6 +771,8 @@ void App::selectedTransformUI()
 void App::render()
 {
     m_renderer->beginFrame();
+
+    vectorial_ui.renderUI(this);
 
     selectedTransformUI();
 
