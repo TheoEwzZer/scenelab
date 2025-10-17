@@ -8,9 +8,11 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "GameObject.hpp"
 #include "Camera.hpp"
+#include "Image.hpp"
 #include "renderer/interface/ARenderer.hpp"
 
 class App {
@@ -48,4 +50,5 @@ public:
     void run();
 
     std::unique_ptr<ARenderer> m_renderer;
+    std::unique_ptr<Image> m_image;
 };
