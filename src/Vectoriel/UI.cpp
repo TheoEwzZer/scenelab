@@ -68,19 +68,18 @@ void UIDrawer::renderUIShape(App *app)
  */
 void UIDrawer::renderUIPrimitive(App *app)
 {
-    static int current_primitive_idx = 0;
     const char *primitives[] = { "Ligne", "Triangle", "Carre", "Rectangle",
         "Polygone", "Cercle", "Ellipse", "Point" };
 
     std::vector<float> vertices;
 
-    ImGui::ListBox("Select primitive", &current_primitive_idx, primitives,
+    ImGui::ListBox("Select primitive", &m_currentPrimitiveIndex, primitives,
         IM_ARRAYSIZE(primitives));
     ImGui::Text("Propriétés");
     ImGui::SliderFloat("Taille Contour", &m_outlineWidth, 0.0f, 1.0f);
     ImGui::Checkbox("Remplissage", &m_fill);
 
-    switch (current_primitive_idx) {
+    switch (m_currentPrimitiveIndex) {
         case 0:
             ImGui::InputFloat2("Position point A", m_line_pointA);
             ImGui::InputFloat2("Position point B", m_line_pointB);
@@ -178,15 +177,13 @@ void UIDrawer::renderUIPrimitive(App *app)
 
 void UIDrawer::renderUI(App *app)
 {
-    static int ui_mode = 0;
-
     ImGui::Begin("Dessin vectoriel");
     ImGui::Separator();
     ImGui::Text("Primitives");
 
     // Selection du mode (Primitive ou Forme)
-    ImGui::RadioButton("Mode Primitive", &ui_mode, 0);
-    ImGui::RadioButton("Mode Forme", &ui_mode, 1);
+    ImGui::RadioButton("Mode Primitive", &m_uiMode, 0);
+    ImGui::RadioButton("Mode Forme", &m_uiMode, 1);
     ImGui::Separator();
 
     // Sélecteurs de couleurs
@@ -196,7 +193,7 @@ void UIDrawer::renderUI(App *app)
     ImGui::Separator();
 
     // Rendu des widgets d'attributs du mode correspondant
-    if (ui_mode == 0) {
+    if (m_uiMode == 0) {
         renderUIPrimitive(app);
     } else {
         renderUIShape(app);
@@ -206,8 +203,8 @@ void UIDrawer::renderUI(App *app)
 
 UIDrawer::~UIDrawer() {}
 
-void UIDrawer::setCurrentColorRGBA(const glm::vec4 &rgba, bool applyFill,
-    bool applyOutline)
+void UIDrawer::setCurrentColorRGBA(
+    const glm::vec4 &rgba, bool applyFill, bool applyOutline)
 {
     if (applyOutline) {
         m_outlineColor[0] = rgba.x;

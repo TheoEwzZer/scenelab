@@ -239,6 +239,10 @@ public:
     void setCurrentColorRGBA(const glm::vec4 &rgba, bool applyFill = true,
         bool applyOutline = true);
 
+    // Expose current UI state for cursor management
+    int getUIMode() const { return m_uiMode; }
+    int getCurrentPrimitiveIndex() const { return m_currentPrimitiveIndex; }
+
 protected:
     void renderUIPrimitive(App *app);
     void renderUIShape(App *app);
@@ -255,6 +259,10 @@ protected:
     float m_circle_radius;
     bool m_fill;
     int m_input_segments;
+
+    // Persisted UI state
+    int m_uiMode = 0;                   // 0: Primitive, 1: Shape
+    int m_currentPrimitiveIndex = 0;    // index in primitives list
 
     /**
      * @brief Fonction utilitaire qui instancie une primitive avec les valeurs

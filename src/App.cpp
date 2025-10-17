@@ -798,6 +798,21 @@ void App::selectedTransformUI()
             m_gameObjects[selectedObjectIndex].setScale(scale);
         }
     }
+
+    switch (currentGizmoOperation) {
+        case ImGuizmo::TRANSLATE:
+            m_currentGizmoOperation = GizmoOp::Translate;
+            break;
+        case ImGuizmo::ROTATE:
+            m_currentGizmoOperation = GizmoOp::Rotate;
+            break;
+        case ImGuizmo::SCALE:
+            m_currentGizmoOperation = GizmoOp::Scale;
+            break;
+        default:
+            m_currentGizmoOperation = GizmoOp::Translate;
+            break;
+    }
 }
 
 void App::render()
@@ -828,6 +843,9 @@ void App::render()
 
     m_image->handleFrameExport(m_renderer->getWindow());
 
+    // Update cursor state at end of frame UI decisions
+    updateCursor();
+
     m_renderer->endFrame();
 }
 
@@ -839,4 +857,40 @@ void App::run()
         update();
         render();
     }
+}
+
+// Map current interaction state to cursor shape (5+ states)
+void App::updateCursor()
+{
+    // Priority 1: camera panning (RMB held)
+    if (firstMouse) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+        return;
+    }
+
+    // Priority 2: ImGuizmo operation (only while actively manipulating)
+    if (ImGuizmo::IsUsing()) {
+        switch (m_currentGizmoOperation) {
+            case GizmoOp::Translate:
+                ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+                return;
+            case GizmoOp::Rotate:
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNESW);
+                return;
+            case GizmoOp::Scale:
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+                return;
+            default:
+                break;
+        }
+    }
+
+    // Priority 3: Text input editing in ImGui
+    if (ImGui::GetIO().WantTextInput) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+        return;
+    }
+
+    // Default: generic pointer
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 }
