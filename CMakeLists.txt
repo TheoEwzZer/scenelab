@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.0)
 project(scenelab VERSION 0.1.0 LANGUAGES C CXX)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wpedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always -W -Wall -Wextra -Wpedantic")
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
