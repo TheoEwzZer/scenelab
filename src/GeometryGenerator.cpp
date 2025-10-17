@@ -192,13 +192,13 @@ std::vector<float> GeometryGenerator::generateCylinder(
     for (int i = 0; i <= sectors; ++i) {
         float sectorAngle = i * sectorStep;
         float x = cosf(sectorAngle);
-        float y = sinf(sectorAngle);
+        float z = sinf(sectorAngle);
 
         sidePositionsTop.push_back(
-            glm::vec3(radius * x, radius * y, halfHeight));
+            glm::vec3(radius * x, halfHeight, radius * z));
         sidePositionsBottom.push_back(
-            glm::vec3(radius * x, radius * y, -halfHeight));
-        sideNormals.push_back(glm::normalize(glm::vec3(x, y, 0.0f)));
+            glm::vec3(radius * x, -halfHeight, radius * z));
+        sideNormals.push_back(glm::normalize(glm::vec3(x, 0.0f, z)));
     }
 
     for (int i = 0; i < sectors; ++i) {
@@ -217,15 +217,15 @@ std::vector<float> GeometryGenerator::generateCylinder(
             glm::vec2((float)i / sectors, 0.0f), sideNormals[i]);
     }
 
-    glm::vec3 topCenter(0.0f, 0.0f, halfHeight);
-    glm::vec3 topNormal(0.0f, 0.0f, 1.0f);
+    glm::vec3 topCenter(0.0f, halfHeight, 0.0f);
+    glm::vec3 topNormal(0.0f, 1.0f, 0.0f);
 
     for (int i = 0; i < sectors; ++i) {
         float angle1 = i * sectorStep;
         float angle2 = (i + 1) * sectorStep;
 
-        glm::vec3 p1(radius * cosf(angle1), radius * sinf(angle1), halfHeight);
-        glm::vec3 p2(radius * cosf(angle2), radius * sinf(angle2), halfHeight);
+        glm::vec3 p1(radius * cosf(angle1), halfHeight, radius * sinf(angle1));
+        glm::vec3 p2(radius * cosf(angle2), halfHeight, radius * sinf(angle2));
 
         addVertex(vertices, topCenter, glm::vec2(0.5f, 0.5f), topNormal);
         addVertex(vertices, p1,
@@ -236,17 +236,17 @@ std::vector<float> GeometryGenerator::generateCylinder(
             topNormal);
     }
 
-    glm::vec3 bottomCenter(0.0f, 0.0f, -halfHeight);
-    glm::vec3 bottomNormal(0.0f, 0.0f, -1.0f);
+    glm::vec3 bottomCenter(0.0f, -halfHeight, 0.0f);
+    glm::vec3 bottomNormal(0.0f, -1.0f, 0.0f);
 
     for (int i = 0; i < sectors; ++i) {
         float angle1 = i * sectorStep;
         float angle2 = (i + 1) * sectorStep;
 
         glm::vec3 p1(
-            radius * cosf(angle1), radius * sinf(angle1), -halfHeight);
+            radius * cosf(angle1), -halfHeight, radius * sinf(angle1));
         glm::vec3 p2(
-            radius * cosf(angle2), radius * sinf(angle2), -halfHeight);
+            radius * cosf(angle2), -halfHeight, radius * sinf(angle2));
 
         addVertex(vertices, bottomCenter, glm::vec2(0.5f, 0.5f), bottomNormal);
         addVertex(vertices, p2,
