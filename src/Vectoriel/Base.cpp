@@ -101,8 +101,6 @@ std::vector<float> AShape::generateGLVertices() const
     return vertices;
 }
 
-std::vector<float> AShape::getVertices() {
-    return (generateGLVertices());
-}
+std::vector<float> AShape::getVertices() { return (generateGLVertices()); }
 
 }
