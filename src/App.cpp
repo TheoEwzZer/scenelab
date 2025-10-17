@@ -790,6 +790,23 @@ void App::selectedTransformUI()
 
     ImGui::Begin("Transformation Type");
 
+    if (ImGui::RadioButton(
+            "Translate (T)", currentGizmoOperation == ImGuizmo::TRANSLATE)) {
+        currentGizmoOperation = ImGuizmo::TRANSLATE;
+    }
+    ImGui::SameLine();
+    if (ImGui::RadioButton(
+            "Rotate (R)", currentGizmoOperation == ImGuizmo::ROTATE)) {
+        currentGizmoOperation = ImGuizmo::ROTATE;
+    }
+    ImGui::SameLine();
+    if (ImGui::RadioButton(
+            "Scale (S)", currentGizmoOperation == ImGuizmo::SCALE)) {
+        currentGizmoOperation = ImGuizmo::SCALE;
+    }
+
+    ImGui::Separator();
+
     // Object selector
     ImGui::Text("Selected Object:");
     if (ImGui::BeginListBox("##object_list",
@@ -804,23 +821,6 @@ void App::selectedTransformUI()
             }
         }
         ImGui::EndListBox();
-    }
-
-    ImGui::Separator();
-
-    if (ImGui::RadioButton(
-            "Translate (T)", currentGizmoOperation == ImGuizmo::TRANSLATE)) {
-        currentGizmoOperation = ImGuizmo::TRANSLATE;
-    }
-    ImGui::SameLine();
-    if (ImGui::RadioButton(
-            "Rotate (R)", currentGizmoOperation == ImGuizmo::ROTATE)) {
-        currentGizmoOperation = ImGuizmo::ROTATE;
-    }
-    ImGui::SameLine();
-    if (ImGui::RadioButton(
-            "Scale (S)", currentGizmoOperation == ImGuizmo::SCALE)) {
-        currentGizmoOperation = ImGuizmo::SCALE;
     }
 
     ImGui::End();
