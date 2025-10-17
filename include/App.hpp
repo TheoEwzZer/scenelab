@@ -42,6 +42,7 @@ private:
     void render();
 
     void selectedTransformUI();
+    void updateCursor();
 
     Vect::UIDrawer vectorial_ui;
 
@@ -57,4 +58,8 @@ public:
 
     std::unique_ptr<ARenderer> m_renderer;
     std::unique_ptr<Image> m_image;
+
+    // Current gizmo operation (for cursor state)
+    enum class GizmoOp { Translate = 0, Rotate = 1, Scale = 2 };
+    GizmoOp m_currentGizmoOperation = GizmoOp::Translate;
 };

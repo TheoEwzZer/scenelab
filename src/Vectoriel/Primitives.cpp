@@ -9,8 +9,10 @@ static const float CONST_POS_Z = 0.0f; // Position z des primitives
 
 namespace Vect::Primitive {
 
-StraightLine::StraightLine(const glm::vec2 &pointA, const glm::vec2 &pointB,
-    float width) : ASimplePrimitive(), m_pointA(pointA), m_pointB(pointB)
+StraightLine::StraightLine(
+    const glm::vec2 &pointA, const glm::vec2 &pointB, float width) :
+    ASimplePrimitive(),
+    m_pointA(pointA), m_pointB(pointB)
 {
     m_outlineWidth = width;
     m_type = "Straight Line";
@@ -48,12 +50,18 @@ std::vector<float> StraightLine::triangulate(float width, float z) const
     glm::vec2 decal = norm * (width / 2.0f);
 
     return {
-        p1.x + decal.x, p1.y + decal.y, z, m_fillColor.r, m_fillColor.g, m_fillColor.b, m_fillColor.a, 1.0f, // V1
-        p1.x - decal.x, p1.y - decal.y, z, m_fillColor.r, m_fillColor.g, m_fillColor.b, m_fillColor.a, 1.0f, // V2
-        p2.x + decal.x, p2.y + decal.y, z, m_fillColor.r, m_fillColor.g, m_fillColor.b, m_fillColor.a, 1.0f, // V3
-        p2.x + decal.x, p2.y + decal.y, z, m_fillColor.r, m_fillColor.g, m_fillColor.b, m_fillColor.a, 1.0f, // V3
-        p1.x - decal.x, p1.y - decal.y, z, m_fillColor.r, m_fillColor.g, m_fillColor.b, m_fillColor.a, 1.0f, // V2
-        p2.x - decal.x, p2.y - decal.y, z, m_fillColor.r, m_fillColor.g, m_fillColor.b, m_fillColor.a, 1.0f, // V4
+        p1.x + decal.x, p1.y + decal.y, z, m_fillColor.r, m_fillColor.g,
+        m_fillColor.b, m_fillColor.a, 1.0f, // V1
+        p1.x - decal.x, p1.y - decal.y, z, m_fillColor.r, m_fillColor.g,
+        m_fillColor.b, m_fillColor.a, 1.0f, // V2
+        p2.x + decal.x, p2.y + decal.y, z, m_fillColor.r, m_fillColor.g,
+        m_fillColor.b, m_fillColor.a, 1.0f, // V3
+        p2.x + decal.x, p2.y + decal.y, z, m_fillColor.r, m_fillColor.g,
+        m_fillColor.b, m_fillColor.a, 1.0f, // V3
+        p1.x - decal.x, p1.y - decal.y, z, m_fillColor.r, m_fillColor.g,
+        m_fillColor.b, m_fillColor.a, 1.0f, // V2
+        p2.x - decal.x, p2.y - decal.y, z, m_fillColor.r, m_fillColor.g,
+        m_fillColor.b, m_fillColor.a, 1.0f, // V4
     };
 }
 
@@ -100,7 +108,8 @@ std::vector<float> RegularPolygon::generateGLVertices() const
 
     auto add_vertex = [&](glm::vec2 pos, RGBAColor color) {
         glVertices.insert(glVertices.end(),
-            { pos.x, pos.y, CONST_POS_Z, color.r, color.g, color.b, color.a, 1.0f });
+            { pos.x, pos.y, CONST_POS_Z, color.r, color.g, color.b, color.a,
+                1.0f });
     };
 
     // Generation des points des lignes
