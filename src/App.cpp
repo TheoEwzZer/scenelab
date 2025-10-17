@@ -1,4 +1,5 @@
 #include "App.hpp"
+#include "GameObject.hpp"
 #include "renderer/implementation/RasterizationRenderer.hpp"
 
 #include "Camera.hpp"
@@ -12,6 +13,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cctype>
@@ -32,7 +34,7 @@ App::~App() {}
 void App::init()
 {
     // Create game objects
-    m_gameObjects.resize(2);
+    m_gameObjects.resize(10);
 
     std::vector<float> vertices = {
         -0.5f,
@@ -648,8 +650,19 @@ void App::update()
     // ImGuizmo manipulation moved to render() function
 }
 
+// Move l'objet dans le vecteur
+GameObject &App::registerObject(GameObject &obj)
+{
+    selectedObjectIndex = m_gameObjects.size();
+    return (m_gameObjects.emplace_back(std::move(obj)));
+}
+
 void App::selectedTransformUI()
 {
+    if (selectedObjectIndex == -1) {
+        return;
+    }
+
     ImGui::Begin("Transforms");
     ImGui::Text("Position");
 
@@ -790,6 +803,8 @@ void App::selectedTransformUI()
 void App::render()
 {
     m_renderer->beginFrame();
+
+    vectorial_ui.renderUI(this);
 
     selectedTransformUI();
     m_image->renderUI();

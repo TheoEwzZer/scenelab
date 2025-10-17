@@ -7,11 +7,14 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <utility>
 #include <string>
 
 #include "GameObject.hpp"
 #include "Camera.hpp"
+#include "Vectoriel.hpp"
 #include "Image.hpp"
 #include "renderer/interface/ARenderer.hpp"
 
@@ -29,7 +32,7 @@ class App {
     glm::vec2 mouseDelta { 0.0f };
     glm::vec2 prevMousePos { 0.0f };
 
-    unsigned int selectedObjectIndex = 1;
+    int64_t selectedObjectIndex = -1;
 
 private:
     std::vector<GameObject> m_gameObjects;
@@ -40,6 +43,8 @@ private:
 
     void selectedTransformUI();
 
+    Vect::UIDrawer vectorial_ui;
+
 public:
     explicit App();
     ~App();
@@ -48,6 +53,7 @@ public:
     App &operator=(const App &) = delete;
 
     void run();
+    GameObject &registerObject(GameObject &object);
 
     std::unique_ptr<ARenderer> m_renderer;
     std::unique_ptr<Image> m_image;

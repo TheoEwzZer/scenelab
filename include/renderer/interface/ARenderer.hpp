@@ -25,7 +25,7 @@ public:
     // Object Related
     virtual int registerObject(const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices,
-        const std::string &texturePath, bool isLight)
+        const std::string &texturePath, bool isLight, bool is2d = false)
         = 0;
     virtual void updateTransform(int objectId, const glm::mat4 &modelMatrix)
         = 0;

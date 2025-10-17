@@ -7,6 +7,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 file(GLOB_RECURSE SOURCES src/**.cpp)
+set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
 
 add_subdirectory(external/glfw)

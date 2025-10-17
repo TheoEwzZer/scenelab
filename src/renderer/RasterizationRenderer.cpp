@@ -28,6 +28,8 @@ RasterizationRenderer::RasterizationRenderer()
 
     m_pointLightShader.init(
         "../assets/shaders/shader.vert", "../assets/shaders/pointLight.frag");
+    m_vectorialShader.init(
+        "../assets/shaders/shader_vect.vert", "../assets/shaders/vect.frag");
 
     // Initialize view and projection matrices
     m_viewMatrix = glm::mat4(1.0f);
@@ -38,7 +40,7 @@ RasterizationRenderer::RasterizationRenderer()
 
 int RasterizationRenderer::registerObject(const std::vector<float> &vertices,
     const std::vector<unsigned int> &indices, const std::string &texturePath,
-    bool isLight)
+    bool isLight, bool is2D)
 {
 
     int id;
@@ -95,6 +97,7 @@ int RasterizationRenderer::registerObject(const std::vector<float> &vertices,
     obj.texture = loadTexture(texturePath);
     obj.isActive = true;
     obj.isLight = isLight;
+    obj.is2D = is2D;
 
     return id;
 }
@@ -130,6 +133,10 @@ void RasterizationRenderer::beginFrame()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Set view and projection matrices once per frame
+    m_vectorialShader.use();
+    m_vectorialShader.setMat4("view", m_viewMatrix);
+    m_vectorialShader.setMat4("projection", m_projMatrix);
+
     m_lightingShader.use();
     m_lightingShader.setMat4("view", m_viewMatrix);
     m_lightingShader.setMat4("projection", m_projMatrix);
@@ -164,6 +171,11 @@ void RasterizationRenderer::drawAll()
             if (obj.isLight) {
                 m_pointLightShader.use();
                 m_pointLightShader.setMat4("model", obj.modelMatrix);
+            } else if (obj.is2D) {
+                m_vectorialShader.use();
+                m_vectorialShader.setMat4("model", obj.modelMatrix);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             } else {
                 m_lightingShader.use();
                 m_lightingShader.setMat4("model", obj.modelMatrix);

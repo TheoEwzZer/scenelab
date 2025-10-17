@@ -15,12 +15,14 @@ private:
         glm::mat4 modelMatrix { 1.0f };
         bool isActive = true;
         bool isLight = false;
+        bool is2D = false;
     };
 
     glm::mat4 m_viewMatrix { 1.0f };
     glm::mat4 m_projMatrix { 1.0f };
 
     ShaderProgram m_lightingShader;
+    ShaderProgram m_vectorialShader;
     ShaderProgram m_pointLightShader;
 
     std::vector<RenderObject> m_renderObjects;
@@ -38,7 +40,7 @@ public:
     // Object Related
     int registerObject(const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices,
-        const std::string &texturePath, bool isLight) override;
+        const std::string &texturePath, bool isLight, bool is2D) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
 
