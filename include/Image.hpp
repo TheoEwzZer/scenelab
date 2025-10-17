@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <array>
 
 #include <glm/glm.hpp>
 #include "GameObject.hpp"
@@ -96,6 +97,7 @@ private:
         std::string path;
         bool selected = true;
     };
+
     std::vector<ImportedImage> m_importedImages;
 
     // Source image data for sampling
@@ -116,4 +118,12 @@ public:
     // Sampling helpers
     void addImportedImagePath(const std::string &path);
     bool generateSampledImageAtCenter();
+
+private:
+    // Histogram
+    bool computeHistogramForPath(const std::string &path);
+    std::array<float, 256> m_histogramBins = {};
+    bool m_histogramAvailable = false;
+    std::string m_histogramSourceName;
+    int m_histogramSelectedIndex = -1;
 };

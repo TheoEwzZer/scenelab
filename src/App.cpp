@@ -514,6 +514,9 @@ void App::init()
     m_gameObjects[1].rendererId = m_renderer->registerObject(
         verticesAndNormal, {}, "../assets/wish-you-where-here.jpg", true);
 
+    // Make the initial asset visible in Image UI for histogram selection
+    m_image->addImportedImagePath("../assets/wish-you-where-here.jpg");
+
     // Set initial position
     m_gameObjects[1].setPosition({ 1.2f, 0.f, 0.0f });
     m_gameObjects[1].setScale(glm::vec3 { 0.2f });

@@ -153,6 +153,70 @@ void Image::addImportedImagePath(const std::string &path)
     }
 }
 
+bool Image::computeHistogramForPath(const std::string &path)
+{
+    int w = 0;
+    int h = 0;
+    int c = 0;
+    unsigned char *data = stbi_load(path.c_str(), &w, &h, &c, 0);
+    if (!data || w <= 0 || h <= 0 || c < 1) {
+        if (data) {
+            stbi_image_free(data);
+        }
+        setStatusMessage("Error: Failed to load image for histogram", 5.0f, true);
+        m_histogramAvailable = false;
+        return false;
+    }
+
+    std::array<unsigned int, 256> counts = {};
+
+    const size_t pixelCount = static_cast<size_t>(w) * static_cast<size_t>(h);
+    const int channels = c;
+
+    for (size_t i = 0; i < pixelCount; ++i) {
+        const size_t idx = i * static_cast<size_t>(channels);
+        unsigned char lum = 0;
+        if (channels >= 3) {
+            const float r = static_cast<float>(data[idx + 0]);
+            const float g = static_cast<float>(data[idx + 1]);
+            const float b = static_cast<float>(data[idx + 2]);
+            const float y = 0.2126f * r + 0.7152f * g + 0.0722f * b;
+            int bin = static_cast<int>(y + 0.5f);
+            if (bin < 0) {
+                bin = 0;
+            }
+            if (bin > 255) {
+                bin = 255;
+            }
+            lum = static_cast<unsigned char>(bin);
+        } else {
+            lum = data[idx + 0];
+        }
+        counts[static_cast<size_t>(lum)] += 1u;
+    }
+
+    stbi_image_free(data);
+
+    unsigned int maxCount = 0u;
+    for (size_t b = 0; b < counts.size(); ++b) {
+        if (counts[b] > maxCount) maxCount = counts[b];
+    }
+
+    if (maxCount == 0u) {
+        m_histogramBins.fill(0.0f);
+    } else {
+        for (size_t b = 0; b < counts.size(); ++b) {
+            m_histogramBins[b] = static_cast<float>(counts[b]) / static_cast<float>(maxCount);
+        }
+    }
+
+    // Save source base name
+    m_histogramSourceName = path.substr(path.find_last_of("/\\") + 1);
+    m_histogramAvailable = true;
+    setStatusMessage("Histogram computed for '" + m_histogramSourceName + "'", 3.0f, false);
+    return true;
+}
+
 bool Image::generateSampledImageAtCenter()
 {
     // Validate sources
@@ -513,6 +577,48 @@ void Image::renderUI()
         }
     } else {
         ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Exporting...");
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Histogram");
+
+    if (m_importedImages.empty()) {
+        ImGui::Text("No images available.");
+    } else {
+        if (m_histogramSelectedIndex < 0
+            || m_histogramSelectedIndex >= (int)m_importedImages.size()) {
+            m_histogramSelectedIndex = 0;
+        }
+
+        const std::string currentBase = m_importedImages[m_histogramSelectedIndex]
+                                            .path.substr(m_importedImages[m_histogramSelectedIndex]
+                                                             .path.find_last_of("/\\")
+                                                + 1);
+        // Ensure histogram is computed for the current selection at least once
+        if (!m_histogramAvailable || m_histogramSourceName != currentBase) {
+            computeHistogramForPath(m_importedImages[m_histogramSelectedIndex].path);
+        }
+        if (ImGui::BeginCombo("Source Image", currentBase.c_str())) {
+            for (int i = 0; i < (int)m_importedImages.size(); ++i) {
+                const std::string base
+                    = m_importedImages[i].path.substr(m_importedImages[i].path.find_last_of("/\\") + 1);
+                const bool isSelected = (m_histogramSelectedIndex == i);
+                if (ImGui::Selectable(base.c_str(), isSelected)) {
+                    m_histogramSelectedIndex = i;
+                    computeHistogramForPath(m_importedImages[i].path);
+                }
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (m_histogramAvailable) {
+            ImGui::Text("Source: %s", m_histogramSourceName.c_str());
+            ImGui::PlotHistogram("Luma", m_histogramBins.data(), (int)m_histogramBins.size(), 0,
+                nullptr, 0.0f, 1.0f, ImVec2(0.0f, 120.0f));
+        }
     }
 
     ImGui::End();
