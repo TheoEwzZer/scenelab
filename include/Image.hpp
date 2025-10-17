@@ -90,4 +90,30 @@ private:
     // Color palette
     std::vector<glm::vec3> m_paletteColors;
     int m_selectedPaletteIndex = 0;
+
+    // Imported images tracking for sampling
+    struct ImportedImage {
+        std::string path;
+        bool selected = true;
+    };
+    std::vector<ImportedImage> m_importedImages;
+
+    // Source image data for sampling
+    struct Src {
+        unsigned char *pixels = nullptr;
+        int w = 0;
+        int h = 0;
+        int channels = 0;
+    };
+
+    // Sampling configuration
+    int m_sampleOutWidth = 512;
+    int m_sampleOutHeight = 512;
+    int m_tileSize = 8;
+    int m_sampleCounter = 0;
+
+public:
+    // Sampling helpers
+    void addImportedImagePath(const std::string &path);
+    bool generateSampledImageAtCenter();
 };

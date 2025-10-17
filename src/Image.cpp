@@ -17,6 +17,10 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#include "stb_image.h"
+
+#include <random>
+#include <chrono>
 
 Image::Image(std::unique_ptr<ARenderer> &renderer,
     std::vector<GameObject> &gameObjects, const Camera &camera) :
@@ -124,6 +128,9 @@ bool Image::addImageObjectAtScreenPos(
         newObject.setPosition(worldPos);
         m_gameObjects.push_back(newObject);
 
+        // Track imported source for sampling feature
+        addImportedImagePath(path);
+
         setStatusMessage(
             "Image added: " + path.substr(path.find_last_of("/\\") + 1), 3.0f,
             false);
@@ -134,6 +141,130 @@ bool Image::addImageObjectAtScreenPos(
             "Error adding image: " + std::string(e.what()), 5.0f, true);
         return false;
     }
+}
+
+void Image::addImportedImagePath(const std::string &path)
+{
+    // Deduplicate by exact path
+    auto it = std::find_if(m_importedImages.begin(), m_importedImages.end(),
+        [&](const ImportedImage &img) { return img.path == path; });
+    if (it == m_importedImages.end()) {
+        m_importedImages.push_back(ImportedImage { path, true });
+    }
+}
+
+bool Image::generateSampledImageAtCenter()
+{
+    // Validate sources
+    std::vector<std::string> sources;
+    sources.reserve(m_importedImages.size());
+    for (const auto &img : m_importedImages) {
+        if (img.selected) {
+            sources.push_back(img.path);
+        }
+    }
+    if (sources.empty()) {
+        setStatusMessage("Error: No source images selected", 5.0f, true);
+        return false;
+    }
+
+    // Clamp configuration
+    int W = std::max(1, m_sampleOutWidth);
+    int H = std::max(1, m_sampleOutHeight);
+    int tile = std::max(1, m_tileSize);
+
+    std::vector<Src> loaded;
+    loaded.reserve(sources.size());
+    for (const auto &p : sources) {
+        int w = 0, h = 0, c = 0;
+        unsigned char *data = stbi_load(p.c_str(), &w, &h, &c, 0);
+        if (data && w > 0 && h > 0 && c >= 1) {
+            loaded.push_back(Src { data, w, h, c });
+        }
+    }
+    if (loaded.empty()) {
+        setStatusMessage("Error: Failed to load selected source images", 5.0f,
+            true);
+        return false;
+    }
+
+    // Output buffer RGB
+    std::vector<unsigned char> out;
+    try {
+        out.resize(static_cast<size_t>(W) * static_cast<size_t>(H) * 3u, 0);
+    } catch (...) {
+        for (auto &s : loaded) {
+            stbi_image_free(s.pixels);
+        }
+        setStatusMessage("Error: Failed to allocate output image", 5.0f, true);
+        return false;
+    }
+
+    // RNG
+    std::mt19937 rng(static_cast<unsigned int>(
+        std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+    std::uniform_int_distribution<size_t> pickSrc(0, loaded.size() - 1);
+
+    for (int y = 0; y < H; y += tile) {
+        for (int x = 0; x < W; x += tile) {
+            const Src &s = loaded[pickSrc(rng)];
+            std::uniform_int_distribution<int> pickX(0, s.w - 1);
+            std::uniform_int_distribution<int> pickY(0, s.h - 1);
+            const int sx = pickX(rng);
+            const int sy = pickY(rng);
+            const size_t si
+                = (static_cast<size_t>(sy) * static_cast<size_t>(s.w)
+                      + static_cast<size_t>(sx))
+                * static_cast<size_t>(s.channels);
+            const unsigned char r = s.pixels[si + 0];
+            const unsigned char g = (s.channels >= 3) ? s.pixels[si + 1]
+                                                      : s.pixels[si + 0];
+            const unsigned char b = (s.channels >= 3) ? s.pixels[si + 2]
+                                                      : s.pixels[si + 0];
+
+            for (int ty = 0; ty < tile && y + ty < H; ++ty) {
+                for (int tx = 0; tx < tile && x + tx < W; ++tx) {
+                    const size_t di = (static_cast<size_t>(y + ty)
+                                          * static_cast<size_t>(W)
+                                          + static_cast<size_t>(x + tx))
+                        * 3u;
+                    out[di + 0] = r;
+                    out[di + 1] = g;
+                    out[di + 2] = b;
+                }
+            }
+        }
+    }
+
+    // Filename
+    char filename[256];
+    snprintf(filename, sizeof(filename), "./sample_%05d.png", m_sampleCounter);
+
+    const int result
+        = stbi_write_png(filename, W, H, 3, out.data(), W * 3);
+
+    // Cleanup
+    for (auto &s : loaded) {
+        stbi_image_free(s.pixels);
+    }
+
+    if (!result) {
+        setStatusMessage("Error: Failed to write sampled PNG", 5.0f, true);
+        return false;
+    }
+
+    m_sampleCounter += 1;
+
+    // Spawn at screen center
+    const bool added = addImageObjectAtScreenPos(filename, 960.0, 540.0);
+    if (added) {
+        setStatusMessage(
+            std::string("Sample generated: ")
+                + std::string(filename).substr(
+                    std::string(filename).find_last_of("/\\") + 1),
+            5.0f, false);
+    }
+    return added;
 }
 
 void Image::startFrameExport(
@@ -318,6 +449,35 @@ void Image::renderUI()
 
     if (ImGui::Button("Add Color")) {
         m_paletteColors.push_back(glm::vec3(1.0f));
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Image Sampling");
+
+    // List imported images with toggles
+    if (m_importedImages.empty()) {
+        ImGui::Text("No imported images yet. Drag & drop to add.");
+    } else {
+        for (size_t i = 0; i < m_importedImages.size(); ++i) {
+            auto &img = m_importedImages[i];
+            const std::string base
+                = img.path.substr(img.path.find_last_of("/\\") + 1);
+            std::string label = std::string("##src_") + std::to_string(i);
+            bool selected = img.selected;
+            ImGui::Checkbox((base + label).c_str(), &selected);
+            img.selected = selected;
+        }
+    }
+
+    ImGui::InputInt("Output Width", &m_sampleOutWidth);
+    if (m_sampleOutWidth < 1) m_sampleOutWidth = 1;
+    ImGui::InputInt("Output Height", &m_sampleOutHeight);
+    if (m_sampleOutHeight < 1) m_sampleOutHeight = 1;
+    ImGui::InputInt("Tile Size", &m_tileSize);
+    if (m_tileSize < 1) m_tileSize = 1;
+
+    if (ImGui::Button("Generate Sampled Image")) {
+        generateSampledImageAtCenter();
     }
 
     ImGui::Text("Frame Sequence Export");
