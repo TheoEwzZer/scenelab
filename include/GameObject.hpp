@@ -9,6 +9,10 @@ private:
     mutable glm::mat4 m_modelMatrix { 1.0f };
     mutable bool m_transformDirty = true;
 
+    glm::vec3 m_aabbCorner1 { 0.0f };
+    glm::vec3 m_aabbCorner2 { 0.0f };
+    bool m_isBoundingBoxActive { false };
+
 public:
     int rendererId = -1;
     char m_name[OBJ_MAX_NAME_SIZE + 1] = { "Object" };
@@ -28,4 +32,23 @@ public:
     bool hasTransformChanged() const { return m_transformDirty; }
 
     const glm::mat4 &getModelMatrix() const;
+
+    void setAABB(const glm::vec3 &corner1, const glm::vec3 &corner2);
+
+    [[nodiscard]] const glm::vec3 &getAABBCorner1() const
+    {
+        return m_aabbCorner1;
+    }
+
+    [[nodiscard]] const glm::vec3 &getAABBCorner2() const
+    {
+        return m_aabbCorner2;
+    }
+
+    void setBoundingBoxActive(bool active) { m_isBoundingBoxActive = active; }
+
+    [[nodiscard]] bool isBoundingBoxActive() const
+    {
+        return m_isBoundingBoxActive;
+    }
 };

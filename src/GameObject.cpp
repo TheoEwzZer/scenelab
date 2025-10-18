@@ -51,3 +51,9 @@ const glm::mat4 &GameObject::getModelMatrix() const
     }
     return m_modelMatrix;
 }
+
+void GameObject::setAABB(const glm::vec3 &corner1, const glm::vec3 &corner2)
+{
+    m_aabbCorner1 = corner1;
+    m_aabbCorner2 = corner2;
+}

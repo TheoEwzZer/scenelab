@@ -29,6 +29,7 @@ class App {
     glm::vec2 prevMousePos { 0.0f };
 
     unsigned int selectedObjectIndex { 0 };
+    bool m_showAllBoundingBoxes { false };
 
 private:
     std::vector<GameObject> m_gameObjects;

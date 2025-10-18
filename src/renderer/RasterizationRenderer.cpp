@@ -31,6 +31,9 @@ RasterizationRenderer::RasterizationRenderer()
     m_pointLightShader.init(
         "../assets/shaders/shader.vert", "../assets/shaders/pointLight.frag");
 
+    m_bboxShader.init(
+        "../assets/shaders/shader.vert", "../assets/shaders/bbox.frag");
+
     // Initialize view and projection matrices
     m_viewMatrix = glm::mat4(1.0f);
     m_viewMatrix = glm::translate(m_viewMatrix, glm::vec3(0.0f, 0.0f, -4.0f));
@@ -135,6 +138,8 @@ void RasterizationRenderer::removeObject(int objectId)
         glDeleteBuffers(1, &obj.VBO);
         glDeleteBuffers(1, &obj.EBO);
         glDeleteTextures(1, &obj.texture);
+        glDeleteVertexArrays(1, &obj.bboxVAO);
+        glDeleteBuffers(1, &obj.bboxVBO);
 
         obj.isActive = false;
         m_freeSlots.push_back(objectId);
@@ -265,4 +270,76 @@ unsigned int RasterizationRenderer::loadTexture(std::string filepath)
     stbi_image_free(data);
 
     return texture;
+}
+
+void RasterizationRenderer::createBoundingBoxBuffers(RenderObject &obj)
+{
+    glGenVertexArrays(1, &obj.bboxVAO);
+    glGenBuffers(1, &obj.bboxVBO);
+
+    glBindVertexArray(obj.bboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, obj.bboxVBO);
+
+    glBufferData(
+        GL_ARRAY_BUFFER, 24 * 3 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(
+        0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+}
+
+void RasterizationRenderer::drawBoundingBox(
+    int objectId, const glm::vec3 &corner1, const glm::vec3 &corner2)
+{
+    if (objectId == -1 || objectId >= static_cast<int>(m_renderObjects.size()))
+        [[unlikely]] {
+        return;
+    }
+
+    RenderObject &obj = m_renderObjects[objectId];
+
+    if (!obj.isActive) [[unlikely]] {
+        return;
+    }
+    if (obj.bboxVAO == 0) [[unlikely]] {
+        createBoundingBoxBuffers(obj);
+    }
+
+    glm::vec3 min = glm::min(corner1, corner2);
+    glm::vec3 max = glm::max(corner1, corner2);
+
+    // clang-format off
+    float bboxVertices[24 * 3] = {
+        min.x, min.y, min.z,  max.x, min.y, min.z,
+        max.x, min.y, min.z,  max.x, max.y, min.z,
+        max.x, max.y, min.z,  min.x, max.y, min.z,
+        min.x, max.y, min.z,  min.x, min.y, min.z,
+
+        min.x, min.y, max.z,  max.x, min.y, max.z,
+        max.x, min.y, max.z,  max.x, max.y, max.z,
+        max.x, max.y, max.z,  min.x, max.y, max.z,
+        min.x, max.y, max.z,  min.x, min.y, max.z,
+
+        min.x, min.y, min.z,  min.x, min.y, max.z,
+        max.x, min.y, min.z,  max.x, min.y, max.z,
+        max.x, max.y, min.z,  max.x, max.y, max.z,
+        min.x, max.y, min.z,  min.x, max.y, max.z
+    };
+    // clang-format on
+
+    glBindBuffer(GL_ARRAY_BUFFER, obj.bboxVBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bboxVertices), bboxVertices);
+
+    m_bboxShader.use();
+    m_bboxShader.setMat4("view", m_viewMatrix);
+    m_bboxShader.setMat4("projection", m_projMatrix);
+    m_bboxShader.setMat4("model", obj.modelMatrix);
+    m_bboxShader.setVec3("bboxColor", glm::vec3(0.0f, 1.0f, 0.0f)); // green
+
+    glBindVertexArray(obj.bboxVAO);
+    glDrawArrays(GL_LINES, 0, 24);
+
+    glBindVertexArray(0);
 }

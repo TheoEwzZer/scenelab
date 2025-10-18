@@ -28,13 +28,14 @@ void App::initGeometryWindow()
 {
     m_GeometryImguiWindow.onSpawnCube = [this](float size) {
         GameObject new_obj;
-        auto vertices { GeometryGenerator::generateCube(size) };
+        auto data { GeometryGenerator::generateCube(size) };
         glm::vec3 randomColor { rand() / (float)RAND_MAX,
             rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
 
-        new_obj.rendererId
-            = m_renderer->registerObject(vertices, {}, randomColor, false);
+        new_obj.rendererId = m_renderer->registerObject(
+            data.vertices, {}, randomColor, false);
         new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
+        new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
         new_obj.setName(
             std::format("Cube {}", m_GeometryImguiWindow.m_cubeCount));
         m_renderer->updateTransform(
@@ -49,14 +50,15 @@ void App::initGeometryWindow()
     m_GeometryImguiWindow.onSpawnSphere = [this](float radius, int sectors,
                                               int stacks) {
         GameObject new_obj;
-        auto vertices { GeometryGenerator::generateSphere(
+        auto data { GeometryGenerator::generateSphere(
             radius, sectors, stacks) };
         glm::vec3 randomColor { rand() / (float)RAND_MAX,
             rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
 
-        new_obj.rendererId
-            = m_renderer->registerObject(vertices, {}, randomColor, false);
+        new_obj.rendererId = m_renderer->registerObject(
+            data.vertices, {}, randomColor, false);
         new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
+        new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
         new_obj.setName(
             std::format("Sphere {}", m_GeometryImguiWindow.m_sphereCount));
         m_renderer->updateTransform(
@@ -71,14 +73,15 @@ void App::initGeometryWindow()
     m_GeometryImguiWindow.onSpawnCylinder = [this](float radius, float height,
                                                 int sectors) {
         GameObject new_obj;
-        auto vertices { GeometryGenerator::generateCylinder(
+        auto data { GeometryGenerator::generateCylinder(
             radius, height, sectors) };
         glm::vec3 randomColor { rand() / (float)RAND_MAX,
             rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
 
-        new_obj.rendererId
-            = m_renderer->registerObject(vertices, {}, randomColor, false);
+        new_obj.rendererId = m_renderer->registerObject(
+            data.vertices, {}, randomColor, false);
         new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
+        new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
         new_obj.setName(
             std::format("Cylinder {}", m_GeometryImguiWindow.m_cylinderCount));
         m_renderer->updateTransform(
@@ -777,6 +780,19 @@ void App::selectedTransformUI()
             { std::stof(xScale), std::stof(yScale), std::stof(zScale) });
     } catch (const std::invalid_argument &) {
     }
+
+    // Bounding box per obj
+    ImGui::Separator();
+
+    if (!m_showAllBoundingBoxes) {
+        bool bboxActive
+            = m_gameObjects[selectedObjectIndex].isBoundingBoxActive();
+        if (ImGui::Checkbox("Show Bounding Box", &bboxActive)) {
+            m_gameObjects[selectedObjectIndex].setBoundingBoxActive(
+                bboxActive);
+        }
+    }
+
     ImGui::End();
 
     // ImGuizmo manipulation
@@ -805,9 +821,23 @@ void App::selectedTransformUI()
         currentGizmoOperation = ImGuizmo::SCALE;
     }
 
+    // All bounding boxes
     ImGui::Separator();
 
+    ImGui::Checkbox("Show All Bounding Boxes", &m_showAllBoundingBoxes);
+    if (!m_showAllBoundingBoxes) {
+        ImGui::SameLine();
+        if (ImGui::Button("Hide All")) {
+            for (auto &obj : m_gameObjects) {
+                obj.setBoundingBoxActive(false);
+            }
+        }
+    }
+
     // Object selector
+
+    ImGui::Separator();
+
     ImGui::Text("Selected Object:");
     if (ImGui::BeginListBox("##object_list",
             ImVec2(0, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
@@ -869,6 +899,14 @@ void App::render()
     m_renderer->setProjectionMatrix(m_camera.getProjectionMatrix());
 
     m_renderer->drawAll();
+
+    for (const auto &obj : m_gameObjects) {
+        if (m_showAllBoundingBoxes || obj.isBoundingBoxActive()) [[unlikely]] {
+            m_renderer->drawBoundingBox(
+                obj.rendererId, obj.getAABBCorner1(), obj.getAABBCorner2());
+        }
+    }
+
     m_renderer->endFrame();
 }
 

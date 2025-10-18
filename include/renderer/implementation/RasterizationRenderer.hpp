@@ -8,7 +8,7 @@
 class RasterizationRenderer : public ARenderer {
 private:
     struct RenderObject {
-        unsigned int VAO, VBO, EBO;
+        unsigned int VAO, VBO, EBO, bboxVAO { 0 }, bboxVBO { 0 };
         unsigned int texture;
         unsigned int indexCount;
         bool useIndices = false;
@@ -24,11 +24,13 @@ private:
 
     ShaderProgram m_lightingShader;
     ShaderProgram m_pointLightShader;
+    ShaderProgram m_bboxShader;
 
     std::vector<RenderObject> m_renderObjects;
     std::vector<int> m_freeSlots;
 
     unsigned int loadTexture(std::string filepath);
+    void createBoundingBoxBuffers(RenderObject &obj);
 
 public:
     explicit RasterizationRenderer();
@@ -48,6 +50,8 @@ public:
         bool isLight);
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
+    void drawBoundingBox(int objectId, const glm::vec3 &corner1,
+        const glm::vec3 &corner2) override;
 
     // Camera Related
     void setViewMatrix(const glm::mat4 &view) override { m_viewMatrix = view; }
