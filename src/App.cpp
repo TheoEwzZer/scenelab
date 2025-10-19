@@ -712,7 +712,14 @@ void App::init()
     m_renderer->addDropCallback([&](const std::vector<std::string> &paths,
                                     double mouseX, double mouseY) {
         for (const auto &p : paths) {
-            m_image->addImageObjectAtScreenPos(p, mouseX, mouseY);
+            const std::size_t beforeCount = m_gameObjects.size();
+            const bool added
+                = m_image->addImageObjectAtScreenPos(p, mouseX, mouseY);
+            if (added && m_gameObjects.size() > 0
+                && m_gameObjects.size() != beforeCount) {
+                selectedObjectIndex = static_cast<int64_t>(m_gameObjects.size())
+                    - 1;
+            }
         }
     });
 
