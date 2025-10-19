@@ -17,12 +17,14 @@ private:
         bool isLight = false;
         bool useTexture = true;
         glm::vec3 objectColor { 1.0f, 1.0f, 1.0f };
+        bool is2D = false;
     };
 
     glm::mat4 m_viewMatrix { 1.0f };
     glm::mat4 m_projMatrix { 1.0f };
 
     ShaderProgram m_lightingShader;
+    ShaderProgram m_vectorialShader;
     ShaderProgram m_pointLightShader;
     ShaderProgram m_bboxShader;
 
@@ -48,6 +50,7 @@ public:
     int registerObject(const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices, const glm::vec3 &color,
         bool isLight);
+        const std::string &texturePath, bool isLight, bool is2D) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
     void drawBoundingBox(int objectId, const glm::vec3 &corner1,

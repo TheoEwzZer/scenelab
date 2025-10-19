@@ -1,5 +1,6 @@
 #include "App.hpp"
 #include "OBJLoader.hpp"
+#include "GameObject.hpp"
 #include "renderer/implementation/RasterizationRenderer.hpp"
 #include "GeometryGenerator.hpp"
 
@@ -10,17 +11,25 @@
 #include "ImGuizmo.h"
 #include <glm/geometric.hpp>
 #include <glm/matrix.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include <format>
+#include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <cstdio>
 
 App::App()
 {
     m_renderer = std::make_unique<RasterizationRenderer>();
     m_camera.setPosition({ 0.0f, 0.0f, 3.0f });
     m_camera.setProjection(45.0f, 1920.0f / 1080.0f, 0.1f, 100.0f);
+
+    m_image = std::make_unique<Image>(m_renderer, m_gameObjects, m_camera);
 }
 
 App::~App() {}
@@ -150,7 +159,8 @@ void App::initGeometryWindow()
 void App::init()
 {
     /*
-    m_gameObjects.resize(2);
+    // Create game objects
+    m_gameObjects.resize(10);
 
     std::vector<float> vertices = {
         -0.5f,
@@ -632,6 +642,9 @@ void App::init()
     m_gameObjects[1].rendererId = m_renderer->registerObject(
         verticesAndNormal, {}, "../assets/wish-you-where-here.jpg", true);
 
+    // Make the initial asset visible in Image UI for histogram selection
+    m_image->addImportedImagePath("../assets/wish-you-where-here.jpg");
+
     // Set initial position
     m_gameObjects[1].setPosition({ 1.2f, 0.f, 0.0f });
     m_gameObjects[1].setScale(glm::vec3 { 0.2f });
@@ -695,6 +708,14 @@ void App::init()
         rayWor = glm::normalize(rayWor);
     });
 
+    // File drop import
+    m_renderer->addDropCallback([&](const std::vector<std::string> &paths,
+                                    double mouseX, double mouseY) {
+        for (const auto &p : paths) {
+            m_image->addImageObjectAtScreenPos(p, mouseX, mouseY);
+        }
+    });
+
     // Register mouse movement callback
     m_renderer->addCursorCallback([&](double x, double y) {
         m_currentMousePos = glm::vec2(x, y);
@@ -715,6 +736,7 @@ void App::init()
 
 void App::update()
 {
+    m_image->updateMessageTimer(0.016f);
     if (wPressed) {
         auto pos = m_camera.getPosition();
         auto rot = m_camera.getRotation();
@@ -757,9 +779,16 @@ void App::update()
     // ImGuizmo manipulation moved to render() function
 }
 
+// Move l'objet dans le vecteur
+GameObject &App::registerObject(GameObject &obj)
+{
+    selectedObjectIndex = m_gameObjects.size();
+    return (m_gameObjects.emplace_back(std::move(obj)));
+}
+
 void App::selectedTransformUI()
 {
-    if (m_gameObjects.empty()) {
+    if (m_gameObjects.empty() || selectedObjectIndex == -1) {
         return;
     }
 
@@ -931,13 +960,36 @@ void App::selectedTransformUI()
             m_gameObjects[selectedObjectIndex].setScale(scale);
         }
     }
+
+    switch (currentGizmoOperation) {
+        case ImGuizmo::TRANSLATE:
+            m_currentGizmoOperation = GizmoOp::Translate;
+            break;
+        case ImGuizmo::ROTATE:
+            m_currentGizmoOperation = GizmoOp::Rotate;
+            break;
+        case ImGuizmo::SCALE:
+            m_currentGizmoOperation = GizmoOp::Scale;
+            break;
+        default:
+            m_currentGizmoOperation = GizmoOp::Translate;
+            break;
+    }
 }
 
 void App::render()
 {
     m_renderer->beginFrame();
 
+    vectorial_ui.renderUI(this);
+
     selectedTransformUI();
+    m_image->renderUI();
+
+    glm::vec4 paletteColor;
+    if (m_image->consumeSelectedPaletteColor(paletteColor)) {
+        vectorial_ui.setCurrentColorRGBA(paletteColor, true, true);
+    }
 
     // same as selectedTransformUI but for Geometry specifically, and put in a
     // separate class.
@@ -961,6 +1013,10 @@ void App::render()
                 obj.rendererId, obj.getAABBCorner1(), obj.getAABBCorner2());
         }
     }
+    m_image->handleFrameExport(m_renderer->getWindow());
+
+    // Update cursor state at end of frame UI decisions
+    updateCursor();
 
     m_renderer->endFrame();
 }
@@ -973,4 +1029,40 @@ void App::run()
         update();
         render();
     }
+}
+
+// Map current interaction state to cursor shape (5+ states)
+void App::updateCursor()
+{
+    // Priority 1: camera panning (RMB held)
+    if (firstMouse) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+        return;
+    }
+
+    // Priority 2: ImGuizmo operation (only while actively manipulating)
+    if (ImGuizmo::IsUsing()) {
+        switch (m_currentGizmoOperation) {
+            case GizmoOp::Translate:
+                ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+                return;
+            case GizmoOp::Rotate:
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNESW);
+                return;
+            case GizmoOp::Scale:
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+                return;
+            default:
+                break;
+        }
+    }
+
+    // Priority 3: Text input editing in ImGui
+    if (ImGui::GetIO().WantTextInput) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+        return;
+    }
+
+    // Default: generic pointer
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 }

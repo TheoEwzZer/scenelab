@@ -20,6 +20,8 @@ std::unordered_map<int,
     std::unordered_map<int, std::vector<std::function<void()>>>>
     keyCallbacks = {};
 std::function<void(double, double)> cursorCallback = NULL;
+static std::function<void(const std::vector<std::string> &, double, double)>
+    dropCallback;
 
 static void error_callback(int error, const char *description)
 {
@@ -73,6 +75,31 @@ void ARenderer::addCursorCallback(std::function<void(double, double)> callback)
 {
     cursorCallback = callback;
     glfwSetCursorPosCallback(m_window, cursor_callback);
+}
+
+static void drop_callback(GLFWwindow *window, int count, const char **paths)
+{
+    double mx = 0.0, my = 0.0;
+    if (window) {
+        glfwGetCursorPos(window, &mx, &my);
+    }
+    if (!dropCallback) {
+        return;
+    }
+    std::vector<std::string> dropped;
+    dropped.reserve(static_cast<size_t>(count));
+    for (int i = 0; i < count; ++i) {
+        dropped.emplace_back(paths[i] ? paths[i] : "");
+    }
+    dropCallback(dropped, mx, my);
+}
+
+void ARenderer::addDropCallback(std::function<void(
+        const std::vector<std::string> &paths, double mouseX, double mouseY)>
+        callback)
+{
+    dropCallback = std::move(callback);
+    glfwSetDropCallback(m_window, drop_callback);
 }
 
 ARenderer::ARenderer()
