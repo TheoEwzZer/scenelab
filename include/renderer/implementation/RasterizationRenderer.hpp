@@ -44,13 +44,12 @@ public:
     // Object Related
     int registerObject(const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices,
-        const std::string &texturePath, bool isLight) override;
+        const std::string &texturePath, bool isLight, bool is2D = false) override;
     int registerObject(const std::vector<float> &vertices,
-        const std::vector<unsigned int> &indices, bool isLight);
+        const std::vector<unsigned int> &indices, bool isLight) override;
     int registerObject(const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices, const glm::vec3 &color,
-        bool isLight);
-        const std::string &texturePath, bool isLight, bool is2D) override;
+        bool isLight) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
     void drawBoundingBox(int objectId, const glm::vec3 &corner1,

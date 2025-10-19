@@ -33,7 +33,6 @@ class App {
     glm::vec2 mouseDelta { 0.0f };
     glm::vec2 prevMousePos { 0.0f };
 
-    unsigned int selectedObjectIndex { 0 };
     bool m_showAllBoundingBoxes { false };
     int64_t selectedObjectIndex = -1;
 
