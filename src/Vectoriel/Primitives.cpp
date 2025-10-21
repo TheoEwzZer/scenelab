@@ -1,6 +1,7 @@
 #include "Vectoriel.hpp"
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/fwd.hpp>
 #include <vector>
@@ -9,13 +10,12 @@ static const float CONST_POS_Z = 0.0f; // Position z des primitives
 
 namespace Vect::Primitive {
 
-StraightLine::StraightLine(
-    const glm::vec2 &pointA, const glm::vec2 &pointB, float width) :
-    ASimplePrimitive(),
-    m_pointA(pointA), m_pointB(pointB)
+StraightLine::StraightLine(const glm::vec2 &pointA, const glm::vec2 &pointB,
+    float width) : ASimplePrimitive(), m_pointA(pointA), m_pointB(pointB)
 {
     m_outlineWidth = width;
     m_type = "Straight Line";
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 StraightLine::~StraightLine() {}
@@ -69,6 +69,7 @@ RegularPolygon::RegularPolygon(uint32_t segments) : ASimplePrimitive()
 {
     m_type = "Polygon";
     m_segments = segments;
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 RegularPolygon::~RegularPolygon() {}
@@ -163,6 +164,7 @@ Ellipse::Ellipse(const glm::vec2 &radius, uint32_t resolution) :
 {
     m_scale = radius;
     m_type = "Ellipse";
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 Ellipse::~Ellipse() {}
@@ -175,6 +177,7 @@ Circle::Circle(float radius, uint32_t resolution) :
     Ellipse(glm::vec2(radius, radius), resolution)
 {
     m_type = "Circle";
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 Circle::~Circle() {}
@@ -183,6 +186,7 @@ Triangle::Triangle() : RegularPolygon(3)
 {
     m_type = "Triangle";
     setLocalRotation(-30);
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 Triangle::~Triangle() {}
@@ -192,11 +196,16 @@ Rectangle::Rectangle(const glm::vec2 &size) : RegularPolygon(4)
     m_type = "Rectangle";
     setLocalScale(size);
     setLocalRotation(45);
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 Rectangle::~Rectangle() {}
 
-Square::Square(float size) : Rectangle({ size, size }) { m_type = "Square"; }
+Square::Square(float size) : Rectangle({ size, size })
+{
+    m_type = "Square";
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
+}
 
 Square::~Square() {}
 
