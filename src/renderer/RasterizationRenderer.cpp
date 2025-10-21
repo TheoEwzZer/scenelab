@@ -184,6 +184,18 @@ void RasterizationRenderer::beginFrame()
 
 void RasterizationRenderer::drawAll()
 {
+    // Ensure shaders use the current view/projection for this render pass
+    m_vectorialShader.use();
+    m_vectorialShader.setMat4("view", m_viewMatrix);
+    m_vectorialShader.setMat4("projection", m_projMatrix);
+
+    m_lightingShader.use();
+    m_lightingShader.setMat4("view", m_viewMatrix);
+    m_lightingShader.setMat4("projection", m_projMatrix);
+
+    m_pointLightShader.use();
+    m_pointLightShader.setMat4("view", m_viewMatrix);
+    m_pointLightShader.setMat4("projection", m_projMatrix);
 
     for (size_t i = 0; i < m_renderObjects.size(); ++i) {
         const auto &obj = m_renderObjects[i];

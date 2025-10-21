@@ -19,6 +19,7 @@
 #include "Vectoriel.hpp"
 #include "Image.hpp"
 #include "renderer/interface/ARenderer.hpp"
+#include "imgui.h"
 
 class App {
 
@@ -49,6 +50,8 @@ private:
     void initGeometryWindow();
     void selectedTransformUI();
     void updateCursor();
+    void resetAllCameraPoses();
+    void renderCameraGizmo(int cameraId, const Camera &camera, ImVec2 imagePos, ImVec2 imageSize, bool isHovered);
 
     Vect::UIDrawer vectorial_ui;
 

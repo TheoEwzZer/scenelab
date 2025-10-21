@@ -32,6 +32,10 @@ App::App()
     // m_camera.setProjection(45.0f, 1920.0f / 1080.0f, 0.1f, 100.0f);
 
     m_image = std::make_unique<Image>(m_renderer, m_gameObjects, m_camera);
+
+    m_renderer->setCameraOverlayCallback([this](int id, const Camera& camera, ImVec2 imagePos, ImVec2 imageSize, bool isHovered) {
+        this->renderCameraGizmo(id, camera, imagePos, imageSize, isHovered);
+    });
 }
 
 App::~App() {}
@@ -57,6 +61,7 @@ void App::initGeometryWindow()
         selectedObjectIndex = m_gameObjects.size() - 1;
 
         std::cout << std::format("[INFO] Spawned cube\n");
+        resetAllCameraPoses();
     };
 
     m_GeometryImguiWindow.onSpawnSphere = [this](float radius, int sectors,
@@ -80,6 +85,7 @@ void App::initGeometryWindow()
         selectedObjectIndex = m_gameObjects.size() - 1;
 
         std::cout << std::format("[INFO] Spawned sphere\n");
+        resetAllCameraPoses();
     };
 
     m_GeometryImguiWindow.onSpawnCylinder = [this](float radius, float height,
@@ -103,6 +109,7 @@ void App::initGeometryWindow()
         selectedObjectIndex = m_gameObjects.size() - 1;
 
         std::cout << std::format("[INFO] Spawned cylinder\n");
+        resetAllCameraPoses();
     };
 
     // not loaded as an object here yet
@@ -155,6 +162,7 @@ void App::initGeometryWindow()
 
             std::cout << std::format(
                 "[INFO] Spawned instance of {}\n", filepath);
+            resetAllCameraPoses();
         };
 }
 
@@ -727,6 +735,7 @@ void App::init()
                     = m_gameObjects[static_cast<size_t>(selectedObjectIndex)];
                 m_renderer->updateTransform(
                     obj.rendererId, obj.getModelMatrix());
+                resetAllCameraPoses();
             }
         }
     });
@@ -747,18 +756,19 @@ void App::init()
     });
 
     m_renderer->init();
-    m_camera.createCamera();
-    m_camera.createCamera();
-
-    m_camera.setFocused(1);
+    // Create two default cameras to showcase multi-view
+    int cam1 = m_camera.createCamera();
+    m_camera.setFocused(cam1);
     m_camera.setPosition({ 0.0f, 0.0f, 3.0f });
     m_camera.setProjection(45.0f, 1920.0f / 1080.0f, 0.1f, 100.0f);
-    m_renderer->createCameraViews(1, 1920, 1080);
+    m_renderer->createCameraViews(cam1, 640, 360);
 
-    m_camera.setFocused(2);
-    m_camera.setPosition({ 0.0f, 0.0f, 3.0f });
+    int cam2 = m_camera.createCamera();
+    m_camera.setFocused(cam2);
+    m_camera.setPosition({ 3.0f, 3.0f, 3.0f });
     m_camera.setProjection(45.0f, 1920.0f / 1080.0f, 0.1f, 100.0f);
-    m_renderer->createCameraViews(2, 1920, 1080);
+    m_camera.setRotation(-20.0f, -45.0f, 0.0f);
+    m_renderer->createCameraViews(cam2, 640, 360);
 }
 
 void App::update()
@@ -904,14 +914,7 @@ void App::selectedTransformUI()
 
     ImGui::End();
 
-    // ImGuizmo manipulation
-
-    auto view = m_camera.getViewMatrix();
-    auto proj = m_camera.getProjectionMatrix();
-    auto model = m_gameObjects[selectedObjectIndex].getModelMatrix();
-
     static ImGuizmo::OPERATION currentGizmoOperation(ImGuizmo::TRANSLATE);
-    static ImGuizmo::MODE currentGizmoMode(ImGuizmo::WORLD);
 
     ImGui::Begin("Transformation Type");
 
@@ -975,21 +978,6 @@ void App::selectedTransformUI()
     currentGizmoOperation = ImGuizmo::SCALE;
     */
 
-    if (ImGuizmo::Manipulate(&view[0][0], &proj[0][0], currentGizmoOperation,
-            currentGizmoMode, &model[0][0])) {
-        // Only update if ImGuizmo is actually being used
-        if (ImGuizmo::IsUsing()) {
-            glm::vec3 translation, rotation, scale;
-            ImGuizmo::DecomposeMatrixToComponents(
-                &model[0][0], &translation[0], &rotation[0], &scale[0]);
-
-            m_gameObjects[selectedObjectIndex].setPosition(translation);
-            m_gameObjects[selectedObjectIndex].setRotation(
-                glm::radians(glm::vec3(rotation.x, rotation.y, rotation.z)));
-            m_gameObjects[selectedObjectIndex].setScale(scale);
-        }
-    }
-
     switch (currentGizmoOperation) {
         case ImGuizmo::TRANSLATE:
             m_currentGizmoOperation = GizmoOp::Translate;
@@ -1006,6 +994,117 @@ void App::selectedTransformUI()
     }
 }
 
+void App::renderCameraGizmo(int cameraId, const Camera& camera, ImVec2 imagePos, ImVec2 imageSize, bool isHovered)
+{
+    if (selectedObjectIndex < 0
+        || selectedObjectIndex >= static_cast<int>(m_gameObjects.size())) {
+        return;
+    }
+
+    (void)isHovered;
+
+    const Camera *focused = m_camera.getFocusedCamera();
+    if (focused != &camera) {
+        return;
+    }
+
+    auto &selectedObj = m_gameObjects[static_cast<size_t>(selectedObjectIndex)];
+    auto view = camera.getViewMatrix();
+    auto proj = camera.getProjectionMatrix();
+    auto model = selectedObj.getModelMatrix();
+
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(imagePos.x, imagePos.y, imageSize.x, imageSize.y);
+
+    ImGuizmo::OPERATION operation;
+    switch (m_currentGizmoOperation) {
+        case GizmoOp::Translate: operation = ImGuizmo::TRANSLATE; break;
+        case GizmoOp::Rotate: operation = ImGuizmo::ROTATE; break;
+        case GizmoOp::Scale: operation = ImGuizmo::SCALE; break;
+        default: operation = ImGuizmo::TRANSLATE; break;
+    }
+
+    if (ImGuizmo::Manipulate(&view[0][0], &proj[0][0], operation,
+            ImGuizmo::WORLD, &model[0][0])) {
+        if (ImGuizmo::IsUsing()) {
+            glm::vec3 translation, rotation, scale;
+            ImGuizmo::DecomposeMatrixToComponents(
+                &model[0][0], &translation[0], &rotation[0], &scale[0]);
+
+            selectedObj.setPosition(translation);
+            selectedObj.setRotation(
+                glm::radians(glm::vec3(rotation.x, rotation.y, rotation.z)));
+            selectedObj.setScale(scale);
+        }
+    }
+}
+
+static void DrawCameraManagerUI(CameraManager &cameraManager, ARenderer &renderer)
+{
+    ImGui::Begin("Camera Manager");
+
+    // Create / Destroy
+    if (ImGui::Button("Create Camera")) {
+        const int id = cameraManager.createCamera();
+        cameraManager.setFocused(id);
+        cameraManager.setPosition({ 0.0f, 0.0f, 3.0f });
+        cameraManager.setPerspective(id, 45.0f, 16.0f/9.0f, 0.01f, 100.0f);
+        renderer.createCameraViews(id, 512, 512);
+    }
+
+    ImGui::Separator();
+    // List and select focus
+    auto ids = cameraManager.getCameraIds();
+    for (int id : ids) {
+        ImGui::PushID(id);
+        if (ImGui::SmallButton("Focus")) {
+            cameraManager.setFocused(id);
+        }
+        ImGui::SameLine();
+        ImGui::Text("Camera %d", id);
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Destroy")) {
+            renderer.destroyCameraViews(id);
+            cameraManager.destroyCamera(id);
+            ImGui::PopID();
+            continue; // move to next id (this one is gone)
+        }
+
+        if (auto *cam = cameraManager.getCamera(id)) {
+            // Pose controls
+            glm::vec3 pos = cam->getPosition();
+            glm::vec3 rot = cam->getRotation();
+            if (ImGui::DragFloat3("Position##pos", &pos.x, 0.05f)) {
+                cameraManager.setPosition(id, pos);
+            }
+            if (ImGui::DragFloat3("Rotation (deg)##rot", &rot.x, 0.1f)) {
+                cameraManager.setRotation(id, rot.x, rot.y, rot.z);
+            }
+
+            // Projection controls
+            bool isPerspective = cam->getProjectionMode() == Camera::ProjectionMode::Perspective;
+            if (ImGui::Checkbox("Perspective##mode", &isPerspective)) {
+                cameraManager.setProjectionMode(id, isPerspective ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+            }
+            if (isPerspective) {
+                float fov = cam->getFov();
+                if (ImGui::DragFloat("FOV##fov_global", &fov, 0.1f, 10.0f, 160.0f, "%.1f")) {
+                    cameraManager.setFov(id, fov);
+                }
+            } else {
+                float size = cam->getOrthoSize();
+                if (ImGui::DragFloat("Ortho Size##ortho_global", &size, 0.05f, 0.01f, 100.0f, "%.2f")) {
+                    cameraManager.setOrthoSize(id, size);
+                }
+            }
+        }
+        ImGui::Separator();
+        ImGui::PopID();
+    }
+
+    ImGui::End();
+}
+
 void App::render()
 {
     m_renderer->beginFrame();
@@ -1020,9 +1119,11 @@ void App::render()
         vectorial_ui.setCurrentColorRGBA(paletteColor, true, true);
     }
 
-    // same as selectedTransformUI but for Geometry specifically, and put in a
-    // separate class.
+    // Geometry UI
     m_GeometryImguiWindow.render();
+
+    // Camera Manager UI
+    DrawCameraManagerUI(m_camera, *m_renderer);
 
     for (const auto &obj : m_gameObjects) {
         if (obj.hasTransformChanged()) {
@@ -1098,4 +1199,15 @@ void App::updateCursor()
 
     // Default: generic pointer
     ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+}
+
+void App::resetAllCameraPoses()
+{
+    for (int id : m_camera.getCameraIds()) {
+        if (auto *cam = m_camera.getCamera(id)) {
+            cam->setPosition(glm::vec3(0.0f, 0.0f, 3.0f));
+            cam->setRotation(0.0f, 0.0f, 0.0f);
+            // Keep current projection parameters; aspect will be applied by views
+        }
+    }
 }

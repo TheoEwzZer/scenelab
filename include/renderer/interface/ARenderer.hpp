@@ -5,6 +5,7 @@
 #include <glad/gl.h>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #define GLFW_INCLUDE_NONE
 #include "CameraManager.hpp"
 #include <GLFW/glfw3.h>
@@ -12,6 +13,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <glm/glm.hpp>
+#include <imgui.h>
+
+struct ImVec2;
 
 class ARenderer {
 public:
@@ -54,6 +58,8 @@ public:
     void createCameraViews(int id, int width = 512, int height = 512);
     void destroyCameraViews(int id);
     void renderAllViews(CameraManager& cameraManager);
+    using CameraOverlayCallback = std::function<void(int, const Camera&, ImVec2 imagePos, ImVec2 imageSize, bool isHovered)>;
+    void setCameraOverlayCallback(CameraOverlayCallback callback);
 
     // Abstract
     virtual bool shouldWindowClose();
@@ -73,9 +79,15 @@ protected:
         unsigned int depthRBO = 0;
         glm::ivec2 size = {512, 512};
         std::string name = "camera";
+        ImVec2 lastPos = ImVec2(0.0f, 0.0f);
+        ImVec2 lastSize = ImVec2(512.0f, 512.0f);
+        bool hasState = false;
     };
 
     std::unordered_map<int, CameraView> m_cameraViews;
+    CameraOverlayCallback m_cameraOverlayCallback;
+    bool m_lockCameraWindows = false;
+    int m_lockedCameraId = -1;
 
     void renderCameraViews(const Camera & cam, const CameraView & view);
     void renderDockableViews(CameraManager &cameraManager);
