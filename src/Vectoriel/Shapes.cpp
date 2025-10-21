@@ -1,6 +1,5 @@
 #include "Vectoriel.hpp"
-#include <cmath>
-#include <cstdint>
+#include <cstring>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/fwd.hpp>
 #include <memory>
@@ -10,6 +9,7 @@ namespace Vect::Shape {
 
 House::House() : AShape()
 {
+    m_type = "Shape House";
     auto square = std::make_unique<Vect::Primitive::Square>(0.5f);
     auto triangle = std::make_unique<Vect::Primitive::RegularPolygon>(3);
     auto rect
@@ -22,12 +22,14 @@ House::House() : AShape()
     m_primitives.emplace_back(std::move(square));
     m_primitives.emplace_back(std::move(triangle));
     m_primitives.emplace_back(std::move(rect));
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 House::~House() {};
 
 Doll::Doll() : AShape()
 {
+    m_type = "Shape Figure";
     auto rect
         = std::make_unique<Vect::Primitive::Rectangle>(glm::vec2(0.3, 0.1));
     auto triangle = std::make_unique<Vect::Primitive::Triangle>();
@@ -46,12 +48,14 @@ Doll::Doll() : AShape()
     m_primitives.emplace_back(std::move(circle));
     m_primitives.emplace_back(std::move(rect));
     m_primitives.emplace_back(std::move(triangle2));
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 Doll::~Doll() {};
 
 LetterA::LetterA(float width)
 {
+    m_type = "Shape A";
     const glm::vec2 P1(0.0f, 0.7f);
     const glm::vec2 P2(-0.4f, -0.7f);
     const glm::vec2 P3(0.4f, -0.7f);
@@ -67,6 +71,7 @@ LetterA::LetterA(float width)
     auto ligne3
         = std::make_unique<Vect::Primitive::StraightLine>(P4, P5, width);
     m_primitives.emplace_back(std::move(ligne3));
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 LetterA::~LetterA() {}

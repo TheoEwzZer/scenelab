@@ -1,5 +1,6 @@
 #include "Vectoriel.hpp"
 #include <cmath>
+#include <cstring>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/fwd.hpp>
 
@@ -12,6 +13,7 @@ ASimplePrimitive::ASimplePrimitive() :
     m_outlineWidth(0), m_scale(1.0f, 1.0f), m_pos(0.0f, 0.0f),
     m_rotator_offset(0.0f)
 {
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
 }
 
 void ASimplePrimitive::setOutlineWidth(float width) { m_outlineWidth = width; }
@@ -77,6 +79,7 @@ namespace Vect::Shape {
 AShape::AShape() : GameObject()
 {
     m_type = "Abstract Shape";
+    std::strncpy(m_name, m_type.c_str(), sizeof(m_name));
     m_angle = 0.0f;
 }
 
