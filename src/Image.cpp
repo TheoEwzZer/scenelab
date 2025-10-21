@@ -23,9 +23,9 @@
 #include <chrono>
 
 Image::Image(std::unique_ptr<ARenderer> &renderer,
-    std::vector<GameObject> &gameObjects, const Camera &camera) :
+    std::vector<GameObject> &gameObjects, const CameraManager &cameraManager) :
     m_renderer(renderer),
-    m_gameObjects(gameObjects), m_camera(camera)
+    m_gameObjects(gameObjects), m_cameraManager(cameraManager)
 {
     m_paletteColors = { { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f },
         { 0.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } };
@@ -54,11 +54,11 @@ glm::vec3 Image::screenToWorldPosition(double mouseX, double mouseY) const
 
     // Go from clip space to camera space (eye space)
     glm::vec4 eyeCoords
-        = glm::inverse(m_camera.getProjectionMatrix()) * clipCoords;
+        = glm::inverse(m_cameraManager.getProjectionMatrix()) * clipCoords;
     eyeCoords = glm::vec4(eyeCoords.x, eyeCoords.y, -1.0f, 0.0f);
 
     // Go from camera space to world space
-    glm::mat4 invView = glm::inverse(m_camera.getViewMatrix());
+    glm::mat4 invView = glm::inverse(m_cameraManager.getViewMatrix());
     // camera position
     glm::vec3 rayOrigin = glm::vec3(invView[3]);
     glm::vec3 rayDirection = glm::normalize(glm::vec3(invView * eyeCoords));

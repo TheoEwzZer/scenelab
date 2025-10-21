@@ -149,8 +149,10 @@ void RasterizationRenderer::removeObject(int objectId)
 
 void RasterizationRenderer::beginFrame()
 {
-    glClearColor(0.4f, 0.2f, 0.2f, 1.0f);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, 1920, 1080);
 
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Set view and projection matrices once per frame
@@ -182,6 +184,18 @@ void RasterizationRenderer::beginFrame()
 
 void RasterizationRenderer::drawAll()
 {
+    // Ensure shaders use the current view/projection for this render pass
+    m_vectorialShader.use();
+    m_vectorialShader.setMat4("view", m_viewMatrix);
+    m_vectorialShader.setMat4("projection", m_projMatrix);
+
+    m_lightingShader.use();
+    m_lightingShader.setMat4("view", m_viewMatrix);
+    m_lightingShader.setMat4("projection", m_projMatrix);
+
+    m_pointLightShader.use();
+    m_pointLightShader.setMat4("view", m_viewMatrix);
+    m_pointLightShader.setMat4("projection", m_projMatrix);
 
     for (size_t i = 0; i < m_renderObjects.size(); ++i) {
         const auto &obj = m_renderObjects[i];
@@ -225,6 +239,8 @@ void RasterizationRenderer::drawAll()
 
 void RasterizationRenderer::endFrame()
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // <- essentiel
+    glViewport(0, 0, 1920, 1080);
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

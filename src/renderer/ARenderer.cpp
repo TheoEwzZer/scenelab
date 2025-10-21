@@ -4,11 +4,14 @@
 #include <unordered_map>
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
+#include <glm/glm.hpp>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #include "renderer/interface/ARenderer.hpp"
 #include <imgui.h>
+#include "ImGuizmo.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -160,3 +163,235 @@ ARenderer::~ARenderer()
 }
 
 bool ARenderer::shouldWindowClose() { return glfwWindowShouldClose(m_window); }
+
+void ARenderer::setCameraOverlayCallback(CameraOverlayCallback callback)
+{
+    m_cameraOverlayCallback = std::move(callback);
+}
+
+void ARenderer::setBoundingBoxDrawCallback(BoundingBoxDrawCallback callback)
+{
+    m_bboxDrawCallback = std::move(callback);
+}
+
+void ARenderer::renderAllViews(CameraManager &cameraManager)
+{
+    for (auto &[id, view] : m_cameraViews) {
+        if (auto *cam = cameraManager.getCamera(id)) {
+            renderCameraViews(*cam, view);
+        }
+    }
+    renderDockableViews(cameraManager);
+    // Unlock when mouse released
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        m_lockCameraWindows = false;
+        m_lockedCameraId = -1;
+    }
+}
+
+void ARenderer::createCameraViews(const int id, int width, int height)
+{
+    if (!m_cameraViews.contains(id)) {
+        CameraView view;
+        view.size = { width, height };
+
+        // Create and bind framebuffer
+        glGenFramebuffers(1, &view.fbo);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, view.fbo);
+
+        // Create and attach color texture
+        glGenTextures(1, &view.colorTex);
+        glBindTexture(GL_TEXTURE_2D, view.colorTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+            GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+            GL_TEXTURE_2D, view.colorTex, 0);
+
+        // Create and attach depth-stencil buffer
+        glGenRenderbuffers(1, &view.depthRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, view.depthRBO);
+        glRenderbufferStorage(
+            GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+            GL_RENDERBUFFER, view.depthRBO);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER)
+            != GL_FRAMEBUFFER_COMPLETE) {
+            std::cerr << "Framebuffer is incomplete!" << std::endl;
+        }
+
+        m_cameraViews[id] = std::move(view);
+    }
+}
+
+void ARenderer::destroyCameraViews(const int id)
+{
+    if (const auto it = m_cameraViews.find(id); it != m_cameraViews.end()) {
+        const auto &view = it->second;
+        glDeleteFramebuffers(1, &view.fbo);
+        glDeleteTextures(1, &view.colorTex);
+        glDeleteRenderbuffers(1, &view.depthRBO);
+        m_cameraViews.erase(it);
+    }
+}
+
+void ARenderer::renderCameraViews(const Camera &cam, const CameraView &view)
+{
+    // Save current state
+    GLint previousFBO;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
+    GLint previousViewport[4];
+    glGetIntegerv(GL_VIEWPORT, previousViewport);
+
+    // Bind our framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, view.fbo);
+
+    // Set viewport to match the view size
+    glViewport(0, 0, view.size.x, view.size.y);
+
+    // Clear the framebuffer
+    glClearColor(0.4f, 0.2f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Update view and projection matrices
+    setViewMatrix(cam.getViewMatrix());
+    setProjectionMatrix(cam.getProjectionMatrix());
+
+    // Draw scene
+    drawAll();
+
+    // Draw bounding boxes if callback is set
+    if (m_bboxDrawCallback) {
+        m_bboxDrawCallback();
+    }
+
+    // Check for errors
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        std::cout << "OpenGL error after drawing to FBO: " << err << std::endl;
+    }
+
+    // Restore previous state
+    glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
+    glViewport(previousViewport[0], previousViewport[1], previousViewport[2],
+        previousViewport[3]);
+}
+
+void ARenderer::renderDockableViews(CameraManager &cameraManager)
+{
+    for (auto &[id, view] : m_cameraViews) {
+        const std::string name = "Camera " + std::to_string(id);
+        ImGui::SetNextWindowSize(ImVec2(512, 512), ImGuiCond_FirstUseEver);
+
+        ImGuiWindowFlags windowFlags = 0;
+        if (m_lockCameraWindows && m_lockedCameraId == id) {
+            windowFlags |= ImGuiWindowFlags_NoMove;
+            windowFlags |= ImGuiWindowFlags_NoResize;
+            windowFlags |= ImGuiWindowFlags_NoScrollbar;
+            windowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+            if (view.hasState) {
+                ImGui::SetNextWindowPos(view.lastPos);
+                ImGui::SetNextWindowSize(view.lastSize);
+            }
+        }
+
+        ImGui::Begin(name.c_str(), nullptr, windowFlags);
+
+        // Controls toolbar for this camera
+        if (auto *cam = cameraManager.getCamera(id)) {
+            ImGui::PushID(id);
+            const std::string tableId = std::string("cam_ctl_") + std::to_string(id);
+            if (ImGui::BeginTable(tableId.c_str(), 6, ImGuiTableFlags_SizingFixedFit)) {
+                ImGui::TableNextColumn();
+                if (ImGui::SmallButton("Focus")) {
+                    cameraManager.setFocused(id);
+                }
+
+                ImGui::TableNextColumn();
+                bool isPerspective = cam->getProjectionMode() == Camera::ProjectionMode::Perspective;
+                if (ImGui::Checkbox("Persp##mode", &isPerspective)) {
+                    cam->setProjectionMode(isPerspective ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+                }
+
+                ImGui::TableNextColumn();
+                if (isPerspective) {
+                    float fov = cam->getFov();
+                    if (ImGui::DragFloat("FOV##fov", &fov, 0.1f, 10.0f, 160.0f, "%.1f")) {
+                        cam->setFov(fov);
+                    }
+                } else {
+                    float orthoSize = cam->getOrthoSize();
+                    if (ImGui::DragFloat("Size##ortho", &orthoSize, 0.05f, 0.01f, 100.0f, "%.2f")) {
+                        cam->setOrthoSize(orthoSize);
+                    }
+                }
+
+                ImGui::TableNextColumn();
+
+                ImGui::TableNextColumn();
+                if (ImGui::SmallButton("Reset Pose##reset")) {
+                    cam->setPosition(glm::vec3(0.0f, 0.0f, 3.0f));
+                    cam->setRotation(0.0f, 0.0f, 0.0f);
+                }
+                ImGui::EndTable();
+            }
+            ImGui::PopID();
+        }
+
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        int newW = static_cast<int>(avail.x);
+        int newH = static_cast<int>(avail.y);
+        if (newW < 2 || newH < 2) {
+            newW = view.size.x;
+            newH = view.size.y;
+        }
+        if (view.size.x != newW || view.size.y != newH) {
+            view.size = { newW, newH };
+
+            glBindFramebuffer(GL_FRAMEBUFFER, view.fbo);
+
+            glBindTexture(GL_TEXTURE_2D, view.colorTex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, avail.x, avail.y, 0,
+                GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+            glBindRenderbuffer(GL_RENDERBUFFER, view.depthRBO);
+            glRenderbufferStorage(
+                GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, avail.x, avail.y);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            if (auto *cam = cameraManager.getCamera(id)) {
+                const float aspect = static_cast<float>(view.size.x)
+                    / static_cast<float>(view.size.y);
+                cam->setAspect(aspect);
+            }
+        }
+        ImVec2 imagePos = ImGui::GetCursorScreenPos();
+        ImGui::Image((void *)(intptr_t)view.colorTex, avail, ImVec2(0, 1),
+            ImVec2(1, 0));
+
+        // Record state for locking
+        view.lastPos = windowPos;
+        view.lastSize = ImGui::GetWindowSize();
+        view.hasState = true;
+
+        bool isHovered = ImGui::IsItemHovered();
+
+        if (m_cameraOverlayCallback) {
+            if (const auto *cam = cameraManager.getCamera(id)) {
+                m_cameraOverlayCallback(id, *cam, imagePos, avail, isHovered);
+            }
+        }
+
+        if (ImGuizmo::IsUsing() && isHovered) {
+            m_lockCameraWindows = true;
+            m_lockedCameraId = id;
+        }
+
+        ImGui::End();
+    }
+}

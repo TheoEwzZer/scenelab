@@ -14,10 +14,12 @@
 
 #include "GameObject.hpp"
 #include "Camera.hpp"
+#include "CameraManager.hpp"
 #include "GeometryImguiWindow.hpp"
 #include "Vectoriel.hpp"
 #include "Image.hpp"
 #include "renderer/interface/ARenderer.hpp"
+#include "imgui.h"
 
 class App {
 
@@ -38,7 +40,7 @@ class App {
 
 private:
     std::vector<GameObject> m_gameObjects;
-    Camera m_camera;
+    CameraManager m_camera;
     GeometryImguiWindow m_GeometryImguiWindow;
 
     void init();
@@ -48,6 +50,9 @@ private:
     void initGeometryWindow();
     void selectedTransformUI();
     void updateCursor();
+    void resetAllCameraPoses();
+    void renderCameraGizmo(int cameraId, const Camera &camera, ImVec2 imagePos, ImVec2 imageSize, bool isHovered);
+    void drawBoundingBoxes();
 
     Vect::UIDrawer vectorial_ui;
 

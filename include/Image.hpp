@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 #include "GameObject.hpp"
-#include "Camera.hpp"
+#include "CameraManager.hpp"
 
 class ARenderer;
 struct GLFWwindow;
@@ -32,7 +32,7 @@ private:
 
     std::vector<GameObject> &m_gameObjects;
 
-    const Camera &m_camera;
+    const CameraManager &m_cameraManager;
 
     ExportSettings m_exportSettings;
 
@@ -53,7 +53,7 @@ private:
 
 public:
     Image(std::unique_ptr<ARenderer> &renderer,
-        std::vector<GameObject> &gameObjects, const Camera &camera);
+        std::vector<GameObject> &gameObjects, const CameraManager &cameraManager);
 
     ~Image() = default;
 
