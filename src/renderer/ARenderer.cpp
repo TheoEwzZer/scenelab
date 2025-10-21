@@ -304,12 +304,7 @@ void ARenderer::renderDockableViews(CameraManager &cameraManager)
         if (auto *cam = cameraManager.getCamera(id)) {
             ImGui::PushID(id);
             const std::string tableId = std::string("cam_ctl_") + std::to_string(id);
-            if (ImGui::BeginTable(tableId.c_str(), 6, ImGuiTableFlags_SizingFixedFit)) {
-                ImGui::TableNextColumn();
-                if (ImGui::SmallButton("Focus")) {
-                    cameraManager.setFocused(id);
-                }
-
+            if (ImGui::BeginTable(tableId.c_str(), 5, ImGuiTableFlags_SizingFixedFit)) {
                 ImGui::TableNextColumn();
                 bool isPerspective = cam->getProjectionMode() == Camera::ProjectionMode::Perspective;
                 if (ImGui::Checkbox("Persp##mode", &isPerspective)) {
@@ -373,6 +368,12 @@ void ARenderer::renderDockableViews(CameraManager &cameraManager)
         ImVec2 imagePos = ImGui::GetCursorScreenPos();
         ImGui::Image((void *)(intptr_t)view.colorTex, avail, ImVec2(0, 1),
             ImVec2(1, 0));
+
+        // Auto focus this camera when user clicks on its image/window
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)
+            || (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))) {
+            cameraManager.setFocused(id);
+        }
 
         // Record state for locking
         view.lastPos = windowPos;
