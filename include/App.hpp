@@ -22,14 +22,16 @@ class App {
     bool dPressed = false;
     bool spacePressed = false;
     bool leftCtrlPressed = false;
+    bool leftShiftPressed = false;
     glm::vec2 m_currentMousePos;
     bool firstMouse = false;
 
     glm::vec2 mouseDelta { 0.0f };
     glm::vec2 prevMousePos { 0.0f };
 
-    // selected object pointer
-    SceneGraph::Node *m_selectedObjectNode = nullptr;
+    // selected objects (multiple selection support)
+    std::vector<SceneGraph::Node *> m_selectedNodes;
+
 private:
     SceneGraph m_sceneGraph;
 
@@ -39,6 +41,9 @@ private:
     void render();
 
     void selectedTransformUI();
+
+    // Helper function for multi-selection validation
+    bool canAddToSelection(SceneGraph::Node *nodeToAdd);
 
 public:
     explicit App();
