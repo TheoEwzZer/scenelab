@@ -4,6 +4,7 @@
 [submodule "external/imgui"]
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
+	branch = docking
 [submodule "external/stb_image"]
 	path = external/stb_image
 	url = https://github.com/franko/stb_image.git

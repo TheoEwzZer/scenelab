@@ -141,6 +141,8 @@ void ARenderer::init()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
+    // Enable docking
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     // io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;
     // io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports;
     io.ConfigDpiScaleFonts = true;
