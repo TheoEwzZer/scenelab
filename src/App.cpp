@@ -1085,7 +1085,7 @@ void App::renderCameraGizmo(int cameraId, const Camera &camera,
             selectedObj.setScale(scale);
         }
     }
-    
+
     // Object picking: select object on left-click within this camera view
     if (isHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
         && !ImGuizmo::IsUsing()) {
@@ -1106,17 +1106,20 @@ void App::renderCameraGizmo(int cameraId, const Camera &camera,
 
             glm::vec4 nearWorld = invVP * nearClip;
             glm::vec4 farWorld = invVP * farClip;
-            if (nearWorld.w != 0.0f) nearWorld /= nearWorld.w;
-            if (farWorld.w != 0.0f) farWorld /= farWorld.w;
+            if (nearWorld.w != 0.0f) {
+                nearWorld /= nearWorld.w;
+            }
+            if (farWorld.w != 0.0f) {
+                farWorld /= farWorld.w;
+            }
 
             const glm::vec3 rayOrigin = glm::vec3(nearWorld);
             glm::vec3 rayDir = glm::normalize(glm::vec3(farWorld - nearWorld));
 
-            auto intersectsAABB = [](const glm::vec3 &origin,
-                                      const glm::vec3 &dir,
-                                      const glm::vec3 &bmin,
-                                      const glm::vec3 &bmax,
-                                      float &tHit) -> bool {
+            auto intersectsAABB
+                = [](const glm::vec3 &origin, const glm::vec3 &dir,
+                      const glm::vec3 &bmin, const glm::vec3 &bmax,
+                      float &tHit) -> bool {
                 const float EPS = 1e-6f;
                 float tmin = -std::numeric_limits<float>::infinity();
                 float tmax = std::numeric_limits<float>::infinity();
@@ -1136,7 +1139,9 @@ void App::renderCameraGizmo(int cameraId, const Camera &camera,
                     const float invD = 1.0f / d;
                     float t1 = (minA - o) * invD;
                     float t2 = (maxA - o) * invD;
-                    if (t1 > t2) std::swap(t1, t2);
+                    if (t1 > t2) {
+                        std::swap(t1, t2);
+                    }
                     tmin = std::max(tmin, t1);
                     tmax = std::min(tmax, t2);
                     if (tmin > tmax) {
@@ -1160,13 +1165,17 @@ void App::renderCameraGizmo(int cameraId, const Camera &camera,
 
                 // Transform 8 corners to world, then compute world AABB
                 glm::vec3 corners[8] = {
-                    { amin.x, amin.y, amin.z }, { amax.x, amin.y, amin.z },
-                    { amin.x, amax.y, amin.z }, { amax.x, amax.y, amin.z },
-                    { amin.x, amin.y, amax.z }, { amax.x, amin.y, amax.z },
-                    { amin.x, amax.y, amax.z }, { amax.x, amax.y, amax.z },
+                    { amin.x, amin.y, amin.z },
+                    { amax.x, amin.y, amin.z },
+                    { amin.x, amax.y, amin.z },
+                    { amax.x, amax.y, amin.z },
+                    { amin.x, amin.y, amax.z },
+                    { amax.x, amin.y, amax.z },
+                    { amin.x, amax.y, amax.z },
+                    { amax.x, amax.y, amax.z },
                 };
 
-                glm::vec3 wmin( std::numeric_limits<float>::infinity());
+                glm::vec3 wmin(std::numeric_limits<float>::infinity());
                 glm::vec3 wmax(-std::numeric_limits<float>::infinity());
                 for (const auto &c : corners) {
                     glm::vec4 w = M * glm::vec4(c, 1.0f);
