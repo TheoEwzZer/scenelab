@@ -7,14 +7,15 @@ class GameObject {
 protected:
     glm::vec3 m_position { 0.0f }, m_rotation { 0.0f }, m_scale { 1.0f };
     static const auto OBJ_MAX_NAME_SIZE = 25;
-    mutable glm::mat4 m_modelMatrix { 1.0f };
     mutable bool m_transformDirty = true;
-
+    
     glm::vec3 m_aabbCorner1 { 0.0f };
     glm::vec3 m_aabbCorner2 { 0.0f };
     bool m_isBoundingBoxActive { false };
-
+    
 public:
+    mutable glm::mat4 m_localMatrix { 1.0f };
+    mutable glm::mat4 m_worldMatrix { 1.0f };
     int rendererId = -1;
     char m_name[OBJ_MAX_NAME_SIZE + 1] = { "Object" };
 
@@ -37,7 +38,9 @@ public:
         return (std::vector<float>(8, 0.0f));
     };
 
-    const glm::mat4 &getModelMatrix() const;
+    const glm::mat4 &getLocalMatrix() const;
+    const glm::mat4 &getWorldMatrix(const glm::mat4 &parentMatrix = glm::mat4(1.0f)) const;
+    const glm::mat4 &getModelMatrix() const { return getLocalMatrix(); }
 
     void setAABB(const glm::vec3 &corner1, const glm::vec3 &corner2);
 

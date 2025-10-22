@@ -14,6 +14,7 @@
 
 #include "GameObject.hpp"
 #include "Camera.hpp"
+#include "SceneGraph.hpp"
 #include "CameraManager.hpp"
 #include "GeometryImguiWindow.hpp"
 #include "Vectoriel.hpp"
@@ -29,16 +30,22 @@ class App {
     bool dPressed = false;
     bool spacePressed = false;
     bool leftCtrlPressed = false;
+    bool leftShiftPressed = false;
     glm::vec2 m_currentMousePos;
     bool firstMouse = false;
 
     glm::vec2 mouseDelta { 0.0f };
     glm::vec2 prevMousePos { 0.0f };
 
+    // selected objects (multiple selection support)
+    std::vector<SceneGraph::Node *> m_selectedNodes;
+
     bool m_showAllBoundingBoxes { false };
     int64_t selectedObjectIndex = -1;
 
 private:
+    SceneGraph m_sceneGraph;
+
     std::vector<GameObject> m_gameObjects;
     CameraManager m_camera;
     GeometryImguiWindow m_GeometryImguiWindow;
@@ -55,6 +62,9 @@ private:
     void drawBoundingBoxes();
 
     Vect::UIDrawer vectorial_ui;
+
+    // Helper function for multi-selection validation
+    bool canAddToSelection(SceneGraph::Node *nodeToAdd);
 
 public:
     explicit App();
