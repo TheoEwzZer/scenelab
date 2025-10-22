@@ -65,6 +65,12 @@ public:
     bool addImageObjectAtScreenPos(
         const std::string &path, double mouseX, double mouseY);
 
+    // Callback invoked when a new image object is created
+    using OnImageObjectCreated = std::function<void(SceneGraph::Node*)>;
+    void setOnImageObjectCreatedCallback(OnImageObjectCreated callback) {
+        m_onImageObjectCreated = callback;
+    }
+
     void startFrameExport(
         std::function<void(bool success, const std::string &message)>
             callback);
@@ -92,6 +98,9 @@ public:
     bool consumeSelectedPaletteColor(glm::vec4 &outColor);
 
 private:
+    // Callback for when new image objects are created
+    OnImageObjectCreated m_onImageObjectCreated;
+
     // Color palette
     std::vector<glm::vec4> m_paletteColors;
     int m_selectedPaletteIndex = 0;

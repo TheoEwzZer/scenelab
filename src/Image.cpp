@@ -132,8 +132,17 @@ bool Image::addImageObjectAtScreenPos(
         node->setData(newObject);
         m_sceneGraph.getRoot()->addChild(std::move(node));
 
+        // Get pointer to the newly added node before we lose the unique_ptr
+        SceneGraph::Node* newNode = m_sceneGraph.getRoot()->getChild(
+            m_sceneGraph.getRoot()->getChildCount() - 1);
+
         // Track imported source for sampling feature
         addImportedImagePath(path);
+
+        // Notify App that a new object was created
+        if (m_onImageObjectCreated) {
+            m_onImageObjectCreated(newNode);
+        }
 
         setStatusMessage(
             "Image added: " + path.substr(path.find_last_of("/\\") + 1), 3.0f,
