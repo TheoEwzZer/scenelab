@@ -6,8 +6,6 @@
 class GameObject {
 protected:
     glm::vec3 m_position { 0.0f }, m_rotation { 0.0f }, m_scale { 1.0f };
-    mutable glm::mat4 m_localMatrix { 1.0f };
-    mutable glm::mat4 m_worldMatrix { 1.0f };
     static const auto OBJ_MAX_NAME_SIZE = 25;
     mutable bool m_transformDirty = true;
     
@@ -34,12 +32,6 @@ public:
     const glm::vec3 &getScale() const { return m_scale; }
 
     bool hasTransformChanged() const { return m_transformDirty; }
-
-    const glm::mat4 &getLocalMatrix() const;
-    const glm::mat4 &getWorldMatrix(const glm::mat4 &parentMatrix = glm::mat4(1.0f)) const;
-
-    // Alias for backward compatibility
-    const glm::mat4 &getModelMatrix() const { return getLocalMatrix(); }
 
     std::vector<float> getVertices()
     {
