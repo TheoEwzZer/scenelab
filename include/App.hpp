@@ -41,7 +41,6 @@ class App {
     std::vector<SceneGraph::Node *> m_selectedNodes;
 
     bool m_showAllBoundingBoxes { false };
-    int64_t selectedObjectIndex = -1;
 
 private:
     SceneGraph m_sceneGraph;
