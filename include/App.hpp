@@ -46,7 +46,6 @@ class App {
 private:
     SceneGraph m_sceneGraph;
 
-    std::vector<GameObject> m_gameObjects;
     CameraManager m_camera;
     GeometryImguiWindow m_GeometryImguiWindow;
 

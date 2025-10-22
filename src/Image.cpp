@@ -1,4 +1,5 @@
 #include "Image.hpp"
+#include "SceneGraph.hpp"
 #include "renderer/interface/ARenderer.hpp"
 #include <algorithm>
 #include <cctype>
@@ -6,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <cstdio>
+#include <memory>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/geometric.hpp>
@@ -23,9 +25,9 @@
 #include <chrono>
 
 Image::Image(std::unique_ptr<ARenderer> &renderer,
-    std::vector<GameObject> &gameObjects, const CameraManager &cameraManager) :
+    SceneGraph &sceneGraph, const CameraManager &cameraManager) :
     m_renderer(renderer),
-    m_gameObjects(gameObjects), m_cameraManager(cameraManager)
+    m_sceneGraph(sceneGraph), m_cameraManager(cameraManager)
 {
     m_paletteColors = { { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f },
         { 0.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } };
@@ -126,7 +128,9 @@ bool Image::addImageObjectAtScreenPos(
         }
 
         newObject.setPosition(worldPos);
-        m_gameObjects.push_back(newObject);
+        std::unique_ptr<SceneGraph::Node> node = std::make_unique<SceneGraph::Node>();
+        node->setData(newObject);
+        m_sceneGraph.getRoot()->addChild(std::move(node));
 
         // Track imported source for sampling feature
         addImportedImagePath(path);
