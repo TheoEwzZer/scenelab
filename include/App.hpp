@@ -40,13 +40,11 @@ class App {
     // selected objects (multiple selection support)
     std::vector<SceneGraph::Node *> m_selectedNodes;
 
+    bool m_showAllBoundingBoxes { false };
+
 private:
     SceneGraph m_sceneGraph;
 
-    bool m_showAllBoundingBoxes { false };
-    int64_t selectedObjectIndex = -1;
-
-    std::vector<GameObject> m_gameObjects;
     CameraManager m_camera;
     GeometryImguiWindow m_GeometryImguiWindow;
 

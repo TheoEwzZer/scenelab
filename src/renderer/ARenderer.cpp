@@ -141,6 +141,8 @@ void ARenderer::init()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
+    // Enable docking
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     // io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;
     // io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports;
     io.ConfigDpiScaleFonts = true;
@@ -303,28 +305,30 @@ void ARenderer::renderDockableViews(CameraManager &cameraManager)
         // Controls toolbar for this camera
         if (auto *cam = cameraManager.getCamera(id)) {
             ImGui::PushID(id);
-            const std::string tableId = std::string("cam_ctl_") + std::to_string(id);
-            if (ImGui::BeginTable(tableId.c_str(), 6, ImGuiTableFlags_SizingFixedFit)) {
+            const std::string tableId
+                = std::string("cam_ctl_") + std::to_string(id);
+            if (ImGui::BeginTable(
+                    tableId.c_str(), 5, ImGuiTableFlags_SizingFixedFit)) {
                 ImGui::TableNextColumn();
-                if (ImGui::SmallButton("Focus")) {
-                    cameraManager.setFocused(id);
-                }
-
-                ImGui::TableNextColumn();
-                bool isPerspective = cam->getProjectionMode() == Camera::ProjectionMode::Perspective;
+                bool isPerspective = cam->getProjectionMode()
+                    == Camera::ProjectionMode::Perspective;
                 if (ImGui::Checkbox("Persp##mode", &isPerspective)) {
-                    cam->setProjectionMode(isPerspective ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+                    cam->setProjectionMode(isPerspective
+                            ? Camera::ProjectionMode::Perspective
+                            : Camera::ProjectionMode::Orthographic);
                 }
 
                 ImGui::TableNextColumn();
                 if (isPerspective) {
                     float fov = cam->getFov();
-                    if (ImGui::DragFloat("FOV##fov", &fov, 0.1f, 10.0f, 160.0f, "%.1f")) {
+                    if (ImGui::DragFloat(
+                            "FOV##fov", &fov, 0.1f, 10.0f, 160.0f, "%.1f")) {
                         cam->setFov(fov);
                     }
                 } else {
                     float orthoSize = cam->getOrthoSize();
-                    if (ImGui::DragFloat("Size##ortho", &orthoSize, 0.05f, 0.01f, 100.0f, "%.2f")) {
+                    if (ImGui::DragFloat("Size##ortho", &orthoSize, 0.05f,
+                            0.01f, 100.0f, "%.2f")) {
                         cam->setOrthoSize(orthoSize);
                     }
                 }
@@ -373,6 +377,13 @@ void ARenderer::renderDockableViews(CameraManager &cameraManager)
         ImVec2 imagePos = ImGui::GetCursorScreenPos();
         ImGui::Image((void *)(intptr_t)view.colorTex, avail, ImVec2(0, 1),
             ImVec2(1, 0));
+
+        // Auto focus this camera when user clicks on its image/window
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)
+            || (ImGui::IsWindowHovered()
+                && ImGui::IsMouseClicked(ImGuiMouseButton_Left))) {
+            cameraManager.setFocused(id);
+        }
 
         // Record state for locking
         view.lastPos = windowPos;

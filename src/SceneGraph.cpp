@@ -11,20 +11,11 @@ void SceneGraph::Node::addChild(std::unique_ptr<Node> child)
     children.push_back(std::move(child));
 }
 
-SceneGraph::Node *SceneGraph::Node::getParent()
-{
-    return parent;
-}
+SceneGraph::Node *SceneGraph::Node::getParent() { return parent; }
 
-GameObject &SceneGraph::Node::getData()
-{
-    return data;
-}
+GameObject &SceneGraph::Node::getData() { return data; }
 
-void SceneGraph::Node::setData(const GameObject &newData)
-{
-    data = newData;
-}
+void SceneGraph::Node::setData(const GameObject &newData) { data = newData; }
 
 SceneGraph::Node *SceneGraph::Node::getChild(int index)
 {
@@ -34,7 +25,8 @@ SceneGraph::Node *SceneGraph::Node::getChild(int index)
     return children[index].get();
 }
 
-void SceneGraph::Node::traverse(std::function<void(GameObject &, int)> func, int depth)
+void SceneGraph::Node::traverse(
+    std::function<void(GameObject &, int)> func, int depth)
 {
     func(data, depth);
     for (auto &child : children) {
@@ -42,7 +34,8 @@ void SceneGraph::Node::traverse(std::function<void(GameObject &, int)> func, int
     }
 }
 
-void SceneGraph::Node::traverse(std::function<void(Node &, int)> func, int depth)
+void SceneGraph::Node::traverse(
+    std::function<void(Node &, int)> func, int depth)
 {
     func(*this, depth);
     for (auto &child : children) {
@@ -52,8 +45,7 @@ void SceneGraph::Node::traverse(std::function<void(Node &, int)> func, int depth
 
 void SceneGraph::Node::traverseWithTransform(
     std::function<void(GameObject &, const glm::mat4 &, int)> func,
-    const glm::mat4 &parentTransform,
-    int depth)
+    const glm::mat4 &parentTransform, int depth)
 {
     const glm::mat4 &worldTransform = data.getWorldMatrix(parentTransform);
     func(data, worldTransform, depth);
@@ -109,10 +101,7 @@ bool SceneGraph::Node::hasParentChildRelationship(const Node *other) const
 
 // SceneGraph methods implementation
 
-SceneGraph::Node *SceneGraph::getRoot()
-{
-    return root.get();
-}
+SceneGraph::Node *SceneGraph::getRoot() { return root.get(); }
 
 void SceneGraph::setRoot(std::unique_ptr<Node> newRoot)
 {
@@ -142,15 +131,15 @@ void SceneGraph::traverseWithTransform(
     }
 }
 
-void SceneGraph::renderHierarchyUI(
-    std::vector<Node *> &selectedNodes,
+void SceneGraph::renderHierarchyUI(std::vector<Node *> &selectedNodes,
     bool isMultiSelectKeyPressed,
     std::function<bool(Node *)> canAddToSelection)
 {
     ImGui::Begin("Scene Graph");
 
     traverse([&](GameObject &obj, int depth) {
-        std::string label = std::string(depth * 2, ' ') + "Object " + std::to_string(obj.rendererId);
+        std::string label = std::string(depth * 2, ' ') + "Object "
+            + std::to_string(obj.rendererId);
 
         // Check if this object is selected
         bool isSelected = false;
@@ -169,14 +158,18 @@ void SceneGraph::renderHierarchyUI(
 
         // Check if this object can be added to selection (for visual feedback)
         bool canSelect = canAddToSelection(correspondingNode);
-        bool hasRelationship = !canSelect && !selectedNodes.empty() && !isSelected;
+        bool hasRelationship
+            = !canSelect && !selectedNodes.empty() && !isSelected;
 
         // Highlight if selected
         if (isSelected) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(
+                ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
         } else if (hasRelationship) {
-            // Gray out objects that can't be selected due to parent-child relationship
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+            // Gray out objects that can't be selected due to parent-child
+            // relationship
+            ImGui::PushStyleColor(
+                ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
         }
 
         ImGui::Text("%s", label.c_str());
@@ -189,12 +182,14 @@ void SceneGraph::renderHierarchyUI(
             // Check if multi-select key is held for multi-selection
             if (isMultiSelectKeyPressed) {
                 // Toggle selection
-                auto it = std::find(selectedNodes.begin(), selectedNodes.end(), correspondingNode);
+                auto it = std::find(selectedNodes.begin(), selectedNodes.end(),
+                    correspondingNode);
                 if (it != selectedNodes.end()) {
                     // Remove from selection
                     selectedNodes.erase(it);
                 } else {
-                    // Check if we can add this node (no parent-child relationship with existing selections)
+                    // Check if we can add this node (no parent-child
+                    // relationship with existing selections)
                     if (canAddToSelection(correspondingNode)) {
                         selectedNodes.push_back(correspondingNode);
                     }

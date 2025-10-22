@@ -10,8 +10,10 @@ static const float CONST_POS_Z = 0.0f; // Position z des primitives
 
 namespace Vect::Primitive {
 
-StraightLine::StraightLine(const glm::vec2 &pointA, const glm::vec2 &pointB,
-    float width) : ASimplePrimitive(), m_pointA(pointA), m_pointB(pointB)
+StraightLine::StraightLine(
+    const glm::vec2 &pointA, const glm::vec2 &pointB, float width) :
+    ASimplePrimitive(),
+    m_pointA(pointA), m_pointB(pointB)
 {
     m_outlineWidth = width;
     m_type = "Straight Line";

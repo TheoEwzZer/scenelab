@@ -26,13 +26,12 @@ void GameObject::setScale(const glm::vec3 &scale)
     }
 }
 
-const glm::mat4 &GameObject::getLocalMatrix() const
 void GameObject::setName(const std::string &name)
 {
     std::strncpy(m_name, name.c_str(), OBJ_MAX_NAME_SIZE);
 }
 
-const glm::mat4 &GameObject::getModelMatrix() const
+const glm::mat4 &GameObject::getLocalMatrix() const
 {
     if (m_transformDirty) {
         m_localMatrix = glm::mat4(1.0f);
@@ -53,13 +52,12 @@ const glm::mat4 &GameObject::getModelMatrix() const
     return m_localMatrix;
 }
 
-const glm::mat4 &GameObject::getWorldMatrix(const glm::mat4 &parentMatrix) const
+const glm::mat4 &GameObject::getWorldMatrix(
+    const glm::mat4 &parentMatrix) const
 {
     // Compute world matrix as parent * local
     m_worldMatrix = parentMatrix * getLocalMatrix();
     return m_worldMatrix;
-}
-    return m_modelMatrix;
 }
 
 void GameObject::setAABB(const glm::vec3 &corner1, const glm::vec3 &corner2)

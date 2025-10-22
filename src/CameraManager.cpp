@@ -126,7 +126,8 @@ void CameraManager::setPosition(const int id, const glm::vec3 &position)
     }
 }
 
-void CameraManager::setRotation(const int id, const float pitch, const float yaw, const float roll)
+void CameraManager::setRotation(
+    const int id, const float pitch, const float yaw, const float roll)
 {
     if (auto *cam = getCamera(id)) {
         cam->setRotation(pitch, yaw, roll);
@@ -135,51 +136,58 @@ void CameraManager::setRotation(const int id, const float pitch, const float yaw
 
 glm::vec3 CameraManager::getPosition(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return const_cast<CameraManager*>(this)->getCamera(id)->getPosition();
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return const_cast<CameraManager *>(this)->getCamera(id)->getPosition();
     }
-    return glm::vec3(0,0,0);
+    return glm::vec3(0, 0, 0);
 }
 
 glm::vec3 CameraManager::getRotation(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return const_cast<CameraManager*>(this)->getCamera(id)->getRotation();
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return const_cast<CameraManager *>(this)->getCamera(id)->getRotation();
     }
-    return glm::vec3(0,0,0);
+    return glm::vec3(0, 0, 0);
 }
 
 glm::mat4 CameraManager::getViewMatrix(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return const_cast<CameraManager*>(this)->getCamera(id)->getViewMatrix();
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return const_cast<CameraManager *>(this)
+            ->getCamera(id)
+            ->getViewMatrix();
     }
     return glm::mat4(1.0f);
 }
 
 glm::mat4 CameraManager::getProjectionMatrix(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return const_cast<CameraManager*>(this)->getCamera(id)->getProjectionMatrix();
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return const_cast<CameraManager *>(this)
+            ->getCamera(id)
+            ->getProjectionMatrix();
     }
     return glm::mat4(1.0f);
 }
 
-void CameraManager::setPerspective(const int id, float fov, float aspectRatio, float nearPlane, float farPlane)
+void CameraManager::setPerspective(const int id, float fov, float aspectRatio,
+    float nearPlane, float farPlane)
 {
     if (auto *cam = getCamera(id)) {
         cam->setPerspective(fov, aspectRatio, nearPlane, farPlane);
     }
 }
 
-void CameraManager::setOrthographic(const int id, float size, float aspectRatio, float nearPlane, float farPlane)
+void CameraManager::setOrthographic(const int id, float size,
+    float aspectRatio, float nearPlane, float farPlane)
 {
     if (auto *cam = getCamera(id)) {
         cam->setOrthographic(size, aspectRatio, nearPlane, farPlane);
     }
 }
 
-void CameraManager::setProjectionMode(const int id, Camera::ProjectionMode mode)
+void CameraManager::setProjectionMode(
+    const int id, Camera::ProjectionMode mode)
 {
     if (auto *cam = getCamera(id)) {
         cam->setProjectionMode(mode);
@@ -188,8 +196,10 @@ void CameraManager::setProjectionMode(const int id, Camera::ProjectionMode mode)
 
 Camera::ProjectionMode CameraManager::getProjectionMode(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return const_cast<CameraManager*>(this)->getCamera(id)->getProjectionMode();
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return const_cast<CameraManager *>(this)
+            ->getCamera(id)
+            ->getProjectionMode();
     }
     return Camera::ProjectionMode::Perspective;
 }
@@ -203,8 +213,8 @@ void CameraManager::setFov(const int id, float fov)
 
 float CameraManager::getFov(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return const_cast<CameraManager*>(this)->getCamera(id)->getFov();
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return const_cast<CameraManager *>(this)->getCamera(id)->getFov();
     }
     return 45.0f;
 }
@@ -218,19 +228,23 @@ void CameraManager::setOrthoSize(const int id, float size)
 
 float CameraManager::getOrthoSize(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return const_cast<CameraManager*>(this)->getCamera(id)->getOrthoSize();
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return const_cast<CameraManager *>(this)
+            ->getCamera(id)
+            ->getOrthoSize();
     }
     return 5.0f;
 }
 
 std::pair<float, float> CameraManager::getNearFar(const int id) const
 {
-    if (const_cast<CameraManager*>(this)->getCamera(id)) {
-        return { const_cast<CameraManager*>(this)->getCamera(id)->getNearPlane(),
-                 const_cast<CameraManager*>(this)->getCamera(id)->getFarPlane() };
+    if (const_cast<CameraManager *>(this)->getCamera(id)) {
+        return {
+            const_cast<CameraManager *>(this)->getCamera(id)->getNearPlane(),
+            const_cast<CameraManager *>(this)->getCamera(id)->getFarPlane()
+        };
     }
-    return {0.1f, 100.0f};
+    return { 0.1f, 100.0f };
 }
 
 void CameraManager::setAspect(const int id, float aspect)

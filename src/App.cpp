@@ -1,6 +1,7 @@
 #include "App.hpp"
 #include "OBJLoader.hpp"
 #include "GameObject.hpp"
+#include "SceneGraph.hpp"
 #include "renderer/implementation/RasterizationRenderer.hpp"
 #include "GeometryGenerator.hpp"
 
@@ -22,6 +23,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <limits>
 
 App::App()
 {
@@ -31,15 +33,16 @@ App::App()
     // m_camera.setPosition({ 0.0f, 0.0f, 3.0f });
     // m_camera.setProjection(45.0f, 1920.0f / 1080.0f, 0.1f, 100.0f);
 
-    m_image = std::make_unique<Image>(m_renderer, m_gameObjects, m_camera);
+    m_image = std::make_unique<Image>(m_renderer, m_sceneGraph, m_camera);
 
-    m_renderer->setCameraOverlayCallback([this](int id, const Camera& camera, ImVec2 imagePos, ImVec2 imageSize, bool isHovered) {
+    m_renderer->setCameraOverlayCallback([this](int id, const Camera &camera,
+                                             ImVec2 imagePos, ImVec2 imageSize,
+                                             bool isHovered) {
         this->renderCameraGizmo(id, camera, imagePos, imageSize, isHovered);
     });
 
-    m_renderer->setBoundingBoxDrawCallback([this]() {
-        this->drawBoundingBoxes();
-    });
+    m_renderer->setBoundingBoxDrawCallback(
+        [this]() { this->drawBoundingBoxes(); });
 }
 
 App::~App() {}
@@ -61,8 +64,11 @@ void App::initGeometryWindow()
         m_renderer->updateTransform(
             new_obj.rendererId, new_obj.getModelMatrix());
 
-        m_gameObjects.push_back(new_obj);
-        selectedObjectIndex = m_gameObjects.size() - 1;
+        std::unique_ptr<SceneGraph::Node> childNode = std::make_unique<SceneGraph::Node>();
+        childNode->setData(new_obj);
+        m_sceneGraph.getRoot()->addChild(std::move(childNode));
+        m_selectedNodes.clear();
+        m_selectedNodes.push_back(m_sceneGraph.getRoot()->getChild(m_sceneGraph.getRoot()->getChildCount() - 1));
 
         std::cout << std::format("[INFO] Spawned cube\n");
         resetAllCameraPoses();
@@ -85,8 +91,11 @@ void App::initGeometryWindow()
         m_renderer->updateTransform(
             new_obj.rendererId, new_obj.getModelMatrix());
 
-        m_gameObjects.push_back(new_obj);
-        selectedObjectIndex = m_gameObjects.size() - 1;
+        std::unique_ptr<SceneGraph::Node> childNode = std::make_unique<SceneGraph::Node>();
+        childNode->setData(new_obj);
+        m_sceneGraph.getRoot()->addChild(std::move(childNode));
+        m_selectedNodes.clear();
+        m_selectedNodes.push_back(m_sceneGraph.getRoot()->getChild(m_sceneGraph.getRoot()->getChildCount() - 1));
 
         std::cout << std::format("[INFO] Spawned sphere\n");
         resetAllCameraPoses();
@@ -109,8 +118,11 @@ void App::initGeometryWindow()
         m_renderer->updateTransform(
             new_obj.rendererId, new_obj.getModelMatrix());
 
-        m_gameObjects.push_back(new_obj);
-        selectedObjectIndex = m_gameObjects.size() - 1;
+        std::unique_ptr<SceneGraph::Node> childNode = std::make_unique<SceneGraph::Node>();
+        childNode->setData(new_obj);
+        m_sceneGraph.getRoot()->addChild(std::move(childNode));
+        m_selectedNodes.clear();
+        m_selectedNodes.push_back(m_sceneGraph.getRoot()->getChild(m_sceneGraph.getRoot()->getChildCount() - 1));
 
         std::cout << std::format("[INFO] Spawned cylinder\n");
         resetAllCameraPoses();
@@ -161,8 +173,11 @@ void App::initGeometryWindow()
             m_renderer->updateTransform(
                 new_obj.rendererId, new_obj.getModelMatrix());
 
-            m_gameObjects.push_back(new_obj);
-            selectedObjectIndex = m_gameObjects.size() - 1;
+            std::unique_ptr<SceneGraph::Node> childNode = std::make_unique<SceneGraph::Node>();
+            childNode->setData(new_obj);
+            m_sceneGraph.getRoot()->addChild(std::move(childNode));
+            m_selectedNodes.clear();
+            m_selectedNodes.push_back(m_sceneGraph.getRoot()->getChild(m_sceneGraph.getRoot()->getChildCount() - 1));
 
             std::cout << std::format(
                 "[INFO] Spawned instance of {}\n", filepath);
@@ -172,10 +187,6 @@ void App::initGeometryWindow()
 
 void App::init()
 {
-    /*
-    // Create game objects
-    m_gameObjects.resize(10);
-
     std::vector<float> vertices = {
         -0.5f,
         -0.5f,
@@ -650,31 +661,25 @@ void App::init()
         0.0f,
     };
 
-m_sceneGraph.setRoot(std::make_unique<SceneGraph::Node>());
+    m_sceneGraph.setRoot(std::make_unique<SceneGraph::Node>());
     m_sceneGraph.getRoot()->setData(GameObject());
     m_sceneGraph.getRoot()->getData().rendererId = m_renderer->registerObject(
         verticesAndNormal, {}, "../assets/wish-you-where-here.jpg", false);
-    m_sceneGraph.getRoot()->addChild(std::make_unique<SceneGraph::Node>());
-    m_sceneGraph.getRoot()->getChild(0)->setData(GameObject());
-    m_sceneGraph.getRoot()->getChild(0)->getData().rendererId = m_renderer->registerObject(
+    std::unique_ptr<SceneGraph::Node> childNode = std::make_unique<SceneGraph::Node>();
+    childNode->setData(GameObject());
+    childNode->getData().rendererId = m_renderer->registerObject(
         verticesAndNormal, {}, "../assets/wish-you-where-here.jpg", true);
-    m_sceneGraph.getRoot()->addChild(std::make_unique<SceneGraph::Node>());
-    m_sceneGraph.getRoot()->getChild(1)->setData(GameObject());
-    m_sceneGraph.getRoot()->getChild(1)->getData().rendererId = m_renderer->registerObject(
-        verticesAndNormal, {}, "../assets/wish-you-where-here.jpg", false);
+    m_sceneGraph.getRoot()->addChild(std::move(childNode));
     m_selectedNodes.push_back(m_sceneGraph.getRoot());
 
-    // Make the initial asset visible in Image UI for histogram selection
-    m_image->addImportedImagePath("../assets/wish-you-where-here.jpg");
+    m_sceneGraph.getRoot()->getChild(0)->getData().setPosition({ 1.2f, 0.f, 0.0f });
+    m_sceneGraph.getRoot()->getChild(0)->getData().setScale(glm::vec3 { 0.2f });
 
-    // Set initial position
-    m_gameObjects[1].setPosition({ 1.2f, 0.f, 0.0f });
-    m_gameObjects[1].setScale(glm::vec3 { 0.2f });
-
-    for (const auto &obj : m_gameObjects) {
-        m_renderer->updateTransform(obj.rendererId, obj.getModelMatrix());
-    }
-    */
+    m_sceneGraph.traverseWithTransform(
+        [&](GameObject &obj, const glm::mat4 &worldTransform, int depth) {
+            (void)depth;
+            m_renderer->updateTransform(obj.rendererId, worldTransform);
+        });
 
     this->initGeometryWindow();
 
@@ -738,17 +743,20 @@ m_sceneGraph.setRoot(std::make_unique<SceneGraph::Node>());
     m_renderer->addDropCallback([&](const std::vector<std::string> &paths,
                                     double mouseX, double mouseY) {
         for (const auto &p : paths) {
-            const std::size_t beforeCount = m_gameObjects.size();
+            const std::size_t beforeCount = m_sceneGraph.getRoot()->getChildCount();
             const bool added
                 = m_image->addImageObjectAtScreenPos(p, mouseX, mouseY);
-            if (added && m_gameObjects.size() > 0
-                && m_gameObjects.size() != beforeCount) {
-                selectedObjectIndex
-                    = static_cast<int64_t>(m_gameObjects.size()) - 1;
+            if (added && m_sceneGraph.getRoot()->getChildCount() > 0
+                && m_sceneGraph.getRoot()->getChildCount() != beforeCount) {
+                m_selectedNodes.clear();
+                m_selectedNodes.push_back(m_sceneGraph.getRoot()->getChild(
+                    m_sceneGraph.getRoot()->getChildCount() - 1));
+
                 // Ensure renderer transform matches immediately so gizmo
                 // centers on the image
                 auto &obj
-                    = m_gameObjects[static_cast<size_t>(selectedObjectIndex)];
+                    = m_sceneGraph.getRoot()->getChild(
+                        m_sceneGraph.getRoot()->getChildCount() - 1)->getData();
                 m_renderer->updateTransform(
                     obj.rendererId, obj.getModelMatrix());
                 resetAllCameraPoses();
@@ -835,20 +843,35 @@ void App::update()
 // Move l'objet dans le vecteur
 GameObject &App::registerObject(GameObject &obj)
 {
-    selectedObjectIndex = m_gameObjects.size();
-    return (m_gameObjects.emplace_back(std::move(obj)));
+    GameObject gameObj = std::move(obj);
+
+    // Create a new scene graph node for this object
+    std::unique_ptr<SceneGraph::Node> childNode = std::make_unique<SceneGraph::Node>();
+    childNode->setData(gameObj);
+
+    // Add to scene graph
+    m_sceneGraph.getRoot()->addChild(std::move(childNode));
+
+    // Update selection to the newly added node
+    m_selectedNodes.clear();
+    m_selectedNodes.push_back(m_sceneGraph.getRoot()->getChild(m_sceneGraph.getRoot()->getChildCount() - 1));
+
+    // Return reference to the GameObject data in the scene graph
+    return m_selectedNodes.back()->getData();
 }
 
 void App::selectedTransformUI()
 {
     // Render scene graph hierarchy with selection
     m_sceneGraph.renderHierarchyUI(
-        m_selectedNodes,
-        leftShiftPressed,
-        [this](SceneGraph::Node *node) { return this->canAddToSelection(node); }
-    );
+        m_selectedNodes, leftShiftPressed, [this](SceneGraph::Node *node) {
+            return this->canAddToSelection(node);
+        });
 
-    if (m_gameObjects.empty() || selectedObjectIndex == -1) {
+    // Only early-exit if there are no objects at all. We still want the
+    // Transforms window to show when nodes are selected (multi-selection
+    // path), even if selectedObjectIndex is -1.
+    if (m_sceneGraph.getRoot()->getChildCount() == 0 && m_selectedNodes.empty()) {
         return;
     }
 
@@ -988,87 +1011,66 @@ void App::selectedTransformUI()
     } catch (const std::invalid_argument &) {
     }
 
-    // ImGuizmo manipulation
-    
-    auto view = m_camera.getViewMatrix();
-    auto proj = m_camera.getProjectionMatrix();
-
-    glm::mat4 worldMatrix = m_selectedNodes[0]->getWorldMatrix();
-    // Bounding box per obj
     ImGui::Separator();
 
-    if (!m_showAllBoundingBoxes) {
-        bool bboxActive
-            = m_gameObjects[selectedObjectIndex].isBoundingBoxActive();
-        if (ImGui::Checkbox("Show Bounding Box", &bboxActive)) {
-            m_gameObjects[selectedObjectIndex].setBoundingBoxActive(
-                bboxActive);
-        }
+    // Gizmo operation selection
+    ImGui::Text("Gizmo Mode");
+    if (ImGui::RadioButton("Translate (T)", m_currentGizmoOperation == GizmoOp::Translate)) {
+        m_currentGizmoOperation = GizmoOp::Translate;
+    }
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Rotate (R)", m_currentGizmoOperation == GizmoOp::Rotate)) {
+        m_currentGizmoOperation = GizmoOp::Rotate;
+    }
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Scale (S)", m_currentGizmoOperation == GizmoOp::Scale)) {
+        m_currentGizmoOperation = GizmoOp::Scale;
     }
 
     ImGui::End();
+}
 
-    static ImGuizmo::OPERATION currentGizmoOperation(ImGuizmo::TRANSLATE);
+void App::renderCameraGizmo(int cameraId, const Camera &camera,
+    ImVec2 imagePos, ImVec2 imageSize, bool isHovered)
+{
+    (void)cameraId;
 
-    glm::mat4 parentWorldMatrix = m_selectedNodes[0]->getParentWorldMatrix();
-
-    static ImGuizmo::OPERATION currentGizmoOperation(ImGuizmo::TRANSLATE);
-    static ImGuizmo::MODE currentGizmoMode(ImGuizmo::LOCAL);
-
-    ImGui::Begin("Transformation Type");
-
-    if (ImGui::RadioButton(
-            "Translate (T)", currentGizmoOperation == ImGuizmo::TRANSLATE)) {
-        currentGizmoOperation = ImGuizmo::TRANSLATE;
-    }
-    ImGui::SameLine();
-    if (ImGui::RadioButton(
-            "Rotate (R)", currentGizmoOperation == ImGuizmo::ROTATE)) {
-        currentGizmoOperation = ImGuizmo::ROTATE;
-    }
-    ImGui::SameLine();
-    if (ImGui::RadioButton(
-            "Scale (S)", currentGizmoOperation == ImGuizmo::SCALE)) {
-        currentGizmoOperation = ImGuizmo::SCALE;
+    if (m_selectedNodes.empty()) {
+        return;
     }
 
-    // All bounding boxes
-    ImGui::Separator();
-
-    ImGui::Checkbox("Show All Bounding Boxes", &m_showAllBoundingBoxes);
-    if (!m_showAllBoundingBoxes) {
-        ImGui::SameLine();
-        if (ImGui::Button("Hide All")) {
-            for (auto &obj : m_gameObjects) {
-                obj.setBoundingBoxActive(false);
-            }
-        }
+    const Camera *focused = m_camera.getFocusedCamera();
+    if (focused != &camera) {
+        return;
     }
 
-    // Object selector
+    // Use the first selected node for the gizmo
+    auto *primaryNode = m_selectedNodes[0];
+    auto view = camera.getViewMatrix();
+    auto proj = camera.getProjectionMatrix();
+    auto worldMatrix = primaryNode->getWorldMatrix();
+    auto parentWorldMatrix = primaryNode->getParentWorldMatrix();
 
-    ImGui::Separator();
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(imagePos.x, imagePos.y, imageSize.x, imageSize.y);
 
-    ImGui::Text("Selected Object:");
-    if (ImGui::BeginListBox("##object_list",
-            ImVec2(0, 5 * ImGui::GetTextLineHeightWithSpacing()))) {
-        for (std::size_t i = 0; i < m_gameObjects.size(); ++i) {
-            ImGui::PushID((int)i);
-            const bool isSelected = (selectedObjectIndex == i);
-            if (ImGui::Selectable(m_gameObjects[i].m_name, isSelected)) {
-                selectedObjectIndex = i;
-            }
-            if (isSelected) {
-                ImGui::SetItemDefaultFocus();
-            }
-            ImGui::PopID();
-        }
-        ImGui::EndListBox();
+    ImGuizmo::OPERATION operation;
+    switch (m_currentGizmoOperation) {
+        case GizmoOp::Translate:
+            operation = ImGuizmo::TRANSLATE;
+            break;
+        case GizmoOp::Rotate:
+            operation = ImGuizmo::ROTATE;
+            break;
+        case GizmoOp::Scale:
+            operation = ImGuizmo::SCALE;
+            break;
+        default:
+            operation = ImGuizmo::TRANSLATE;
+            break;
     }
 
-    ImGui::End();
-
-    // Store initial transforms for relative manipulation
+    // Store initial transforms for relative manipulation across multiple objects
     static std::vector<glm::vec3> initialPositions;
     static std::vector<glm::vec3> initialRotations;
     static std::vector<glm::vec3> initialScales;
@@ -1077,64 +1079,15 @@ void App::selectedTransformUI()
     static glm::vec3 primaryInitialScale;
     static bool isManipulating = false;
 
-    if (ImGuizmo::Manipulate(&view[0][0], &proj[0][0], currentGizmoOperation,
-            currentGizmoMode, &worldMatrix[0][0])) {
-        // Only update if ImGuizmo is actually being used
-    switch (currentGizmoOperation) {
-        case ImGuizmo::TRANSLATE:
-            m_currentGizmoOperation = GizmoOp::Translate;
-            break;
-        case ImGuizmo::ROTATE:
-            m_currentGizmoOperation = GizmoOp::Rotate;
-            break;
-        case ImGuizmo::SCALE:
-            m_currentGizmoOperation = GizmoOp::Scale;
-            break;
-        default:
-            m_currentGizmoOperation = GizmoOp::Translate;
-            break;
-    }
-}
-
-void App::renderCameraGizmo(int cameraId, const Camera& camera, ImVec2 imagePos, ImVec2 imageSize, bool isHovered)
-{
-    if (selectedObjectIndex < 0
-        || selectedObjectIndex >= static_cast<int>(m_gameObjects.size())) {
-        return;
-    }
-
-    (void)isHovered;
-
-    const Camera *focused = m_camera.getFocusedCamera();
-    if (focused != &camera) {
-        return;
-    }
-
-    auto &selectedObj = m_gameObjects[static_cast<size_t>(selectedObjectIndex)];
-    auto view = camera.getViewMatrix();
-    auto proj = camera.getProjectionMatrix();
-    auto model = selectedObj.getModelMatrix();
-
-    ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(imagePos.x, imagePos.y, imageSize.x, imageSize.y);
-
-    ImGuizmo::OPERATION operation;
-    switch (m_currentGizmoOperation) {
-        case GizmoOp::Translate: operation = ImGuizmo::TRANSLATE; break;
-        case GizmoOp::Rotate: operation = ImGuizmo::ROTATE; break;
-        case GizmoOp::Scale: operation = ImGuizmo::SCALE; break;
-        default: operation = ImGuizmo::TRANSLATE; break;
-    }
-
     if (ImGuizmo::Manipulate(&view[0][0], &proj[0][0], operation,
-            ImGuizmo::WORLD, &model[0][0])) {
+            ImGuizmo::LOCAL, &worldMatrix[0][0])) {
         if (ImGuizmo::IsUsing()) {
             // Store initial state when starting manipulation
             if (!isManipulating) {
                 isManipulating = true;
-                primaryInitialPos = m_selectedNodes[0]->getData().getPosition();
-                primaryInitialRot = m_selectedNodes[0]->getData().getRotation();
-                primaryInitialScale = m_selectedNodes[0]->getData().getScale();
+                primaryInitialPos = primaryNode->getData().getPosition();
+                primaryInitialRot = primaryNode->getData().getRotation();
+                primaryInitialScale = primaryNode->getData().getScale();
 
                 initialPositions.clear();
                 initialRotations.clear();
@@ -1158,15 +1111,14 @@ void App::renderCameraGizmo(int cameraId, const Camera& camera, ImVec2 imagePos,
             // Calculate deltas from primary object's initial state
             glm::vec3 deltaPos = translation - primaryInitialPos;
             glm::vec3 deltaRot = glm::radians(glm::vec3(rotation.x, rotation.y, rotation.z)) - primaryInitialRot;
-            glm::vec3 deltaScale = scale - primaryInitialScale;
 
             // Apply transformations to all selected objects
             for (size_t i = 0; i < m_selectedNodes.size(); ++i) {
-                if (currentGizmoOperation == ImGuizmo::TRANSLATE) {
+                if (operation == ImGuizmo::TRANSLATE) {
                     m_selectedNodes[i]->getData().setPosition(initialPositions[i] + deltaPos);
-                } else if (currentGizmoOperation == ImGuizmo::ROTATE) {
+                } else if (operation == ImGuizmo::ROTATE) {
                     m_selectedNodes[i]->getData().setRotation(initialRotations[i] + deltaRot);
-                } else if (currentGizmoOperation == ImGuizmo::SCALE) {
+                } else if (operation == ImGuizmo::SCALE) {
                     // For scale, multiply rather than add for better results
                     glm::vec3 scaleRatio = scale / primaryInitialScale;
                     m_selectedNodes[i]->getData().setScale(initialScales[i] * scaleRatio);
@@ -1175,17 +1127,126 @@ void App::renderCameraGizmo(int cameraId, const Camera& camera, ImVec2 imagePos,
         }
     } else {
         isManipulating = false;
-                &model[0][0], &translation[0], &rotation[0], &scale[0]);
+    }
 
-            selectedObj.setPosition(translation);
-            selectedObj.setRotation(
-                glm::radians(glm::vec3(rotation.x, rotation.y, rotation.z)));
-            selectedObj.setScale(scale);
+    // Object picking: select object on left-click within this camera view
+    if (isHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+        && !ImGuizmo::IsUsing()) {
+        // Mouse in ImGui screen coords
+        ImVec2 mouse = ImGui::GetMousePos();
+        // Local position inside the image (top-left origin)
+        const float localX = mouse.x - imagePos.x;
+        const float localY = mouse.y - imagePos.y;
+        if (localX >= 0.0f && localY >= 0.0f && localX <= imageSize.x
+            && localY <= imageSize.y) {
+            // Convert to NDC (-1..1). Y is inverted (top-left -> +1)
+            const float ndcX = (localX / imageSize.x) * 2.0f - 1.0f;
+            const float ndcY = 1.0f - (localY / imageSize.y) * 2.0f;
+
+            const glm::mat4 invVP = glm::inverse(proj * view);
+            const glm::vec4 nearClip(ndcX, ndcY, -1.0f, 1.0f);
+            const glm::vec4 farClip(ndcX, ndcY, 1.0f, 1.0f);
+
+            glm::vec4 nearWorld = invVP * nearClip;
+            glm::vec4 farWorld = invVP * farClip;
+            if (nearWorld.w != 0.0f) {
+                nearWorld /= nearWorld.w;
+            }
+            if (farWorld.w != 0.0f) {
+                farWorld /= farWorld.w;
+            }
+
+            const glm::vec3 rayOrigin = glm::vec3(nearWorld);
+            glm::vec3 rayDir = glm::normalize(glm::vec3(farWorld - nearWorld));
+
+            auto intersectsAABB
+                = [](const glm::vec3 &origin, const glm::vec3 &dir,
+                      const glm::vec3 &bmin, const glm::vec3 &bmax,
+                      float &tHit) -> bool {
+                const float EPS = 1e-6f;
+                float tmin = -std::numeric_limits<float>::infinity();
+                float tmax = std::numeric_limits<float>::infinity();
+
+                for (int axis = 0; axis < 3; ++axis) {
+                    const float o = origin[axis];
+                    const float d = dir[axis];
+                    const float minA = bmin[axis];
+                    const float maxA = bmax[axis];
+
+                    if (std::abs(d) < EPS) {
+                        if (o < minA || o > maxA) {
+                            return false;
+                        }
+                        continue;
+                    }
+                    const float invD = 1.0f / d;
+                    float t1 = (minA - o) * invD;
+                    float t2 = (maxA - o) * invD;
+                    if (t1 > t2) {
+                        std::swap(t1, t2);
+                    }
+                    tmin = std::max(tmin, t1);
+                    tmax = std::min(tmax, t2);
+                    if (tmin > tmax) {
+                        return false;
+                    }
+                }
+                tHit = (tmin >= 0.0f) ? tmin : tmax;
+                return tHit >= 0.0f;
+            };
+
+            SceneGraph::Node *bestNode = nullptr;
+            float bestTHit = std::numeric_limits<float>::infinity();
+
+            // Traverse scene graph to find all nodes
+            m_sceneGraph.traverse([&](SceneGraph::Node &node, int depth) {
+                (void)depth;
+                const GameObject &obj = node.getData();
+                const glm::mat4 M = node.getWorldMatrix();
+                const glm::vec3 a = obj.getAABBCorner1();
+                const glm::vec3 b = obj.getAABBCorner2();
+                const glm::vec3 amin = glm::min(a, b);
+                const glm::vec3 amax = glm::max(a, b);
+
+                // Transform 8 corners to world, then compute world AABB
+                glm::vec3 corners[8] = {
+                    { amin.x, amin.y, amin.z },
+                    { amax.x, amin.y, amin.z },
+                    { amin.x, amax.y, amin.z },
+                    { amax.x, amax.y, amin.z },
+                    { amin.x, amin.y, amax.z },
+                    { amax.x, amin.y, amax.z },
+                    { amin.x, amax.y, amax.z },
+                    { amax.x, amax.y, amax.z },
+                };
+
+                glm::vec3 wmin(std::numeric_limits<float>::infinity());
+                glm::vec3 wmax(-std::numeric_limits<float>::infinity());
+                for (const auto &c : corners) {
+                    glm::vec4 w = M * glm::vec4(c, 1.0f);
+                    wmin = glm::min(wmin, glm::vec3(w));
+                    wmax = glm::max(wmax, glm::vec3(w));
+                }
+
+                float t;
+                if (intersectsAABB(rayOrigin, rayDir, wmin, wmax, t)) {
+                    if (t < bestTHit) {
+                        bestTHit = t;
+                        bestNode = &node;
+                    }
+                }
+            });
+
+            if (bestNode) {
+                m_selectedNodes.clear();
+                m_selectedNodes.push_back(bestNode);
+            }
         }
     }
 }
 
-static void DrawCameraManagerUI(CameraManager &cameraManager, ARenderer &renderer)
+static void DrawCameraManagerUI(
+    CameraManager &cameraManager, ARenderer &renderer)
 {
     ImGui::Begin("Camera Manager");
 
@@ -1194,7 +1255,7 @@ static void DrawCameraManagerUI(CameraManager &cameraManager, ARenderer &rendere
         const int id = cameraManager.createCamera();
         cameraManager.setFocused(id);
         cameraManager.setPosition({ 0.0f, 0.0f, 3.0f });
-        cameraManager.setPerspective(id, 45.0f, 16.0f/9.0f, 0.01f, 100.0f);
+        cameraManager.setPerspective(id, 45.0f, 16.0f / 9.0f, 0.01f, 100.0f);
         renderer.createCameraViews(id, 512, 512);
     }
 
@@ -1228,18 +1289,23 @@ static void DrawCameraManagerUI(CameraManager &cameraManager, ARenderer &rendere
             }
 
             // Projection controls
-            bool isPerspective = cam->getProjectionMode() == Camera::ProjectionMode::Perspective;
+            bool isPerspective = cam->getProjectionMode()
+                == Camera::ProjectionMode::Perspective;
             if (ImGui::Checkbox("Perspective##mode", &isPerspective)) {
-                cameraManager.setProjectionMode(id, isPerspective ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic);
+                cameraManager.setProjectionMode(id,
+                    isPerspective ? Camera::ProjectionMode::Perspective
+                                  : Camera::ProjectionMode::Orthographic);
             }
             if (isPerspective) {
                 float fov = cam->getFov();
-                if (ImGui::DragFloat("FOV##fov_global", &fov, 0.1f, 10.0f, 160.0f, "%.1f")) {
+                if (ImGui::DragFloat("FOV##fov_global", &fov, 0.1f, 10.0f,
+                        160.0f, "%.1f")) {
                     cameraManager.setFov(id, fov);
                 }
             } else {
                 float size = cam->getOrthoSize();
-                if (ImGui::DragFloat("Ortho Size##ortho_global", &size, 0.05f, 0.01f, 100.0f, "%.2f")) {
+                if (ImGui::DragFloat("Ortho Size##ortho_global", &size, 0.05f,
+                        0.01f, 100.0f, "%.2f")) {
                     cameraManager.setOrthoSize(id, size);
                 }
             }
@@ -1271,10 +1337,12 @@ void App::render()
     // Camera Manager UI
     DrawCameraManagerUI(m_camera, *m_renderer);
 
-    m_sceneGraph.traverseWithTransform([&](GameObject &obj, const glm::mat4 &worldTransform, int depth) {
-        (void) depth;
-        m_renderer->updateTransform(obj.rendererId, worldTransform);
-    });
+    m_sceneGraph.traverseWithTransform(
+        [&](GameObject &obj, const glm::mat4 &worldTransform, int depth) {
+            (void)depth;
+            m_renderer->updateTransform(obj.rendererId, worldTransform);
+        });
+
 
     // // Update camera matrices
     // m_renderer->setViewMatrix(m_camera.getViewMatrix());
@@ -1310,21 +1378,6 @@ void App::run()
     }
 }
 
-// Helper function to check if a node can be added to the current selection
-bool App::canAddToSelection(SceneGraph::Node *nodeToAdd)
-{
-    if (!nodeToAdd) {
-        return false;
-    }
-
-    // Check if the node has a parent-child relationship with any selected node
-    for (auto *selectedNode : m_selectedNodes) {
-        if (nodeToAdd->hasParentChildRelationship(selectedNode)) {
-            return false;
-        }
-    }
-
-    return true;
 // Map current interaction state to cursor shape (5+ states)
 void App::updateCursor()
 {
@@ -1367,17 +1420,37 @@ void App::resetAllCameraPoses()
         if (auto *cam = m_camera.getCamera(id)) {
             cam->setPosition(glm::vec3(0.0f, 0.0f, 3.0f));
             cam->setRotation(0.0f, 0.0f, 0.0f);
-            // Keep current projection parameters; aspect will be applied by views
+            // Keep current projection parameters; aspect will be applied by
+            // views
         }
     }
 }
 
 void App::drawBoundingBoxes()
 {
-    for (const auto &obj : m_gameObjects) {
+    m_sceneGraph.traverse([&](SceneGraph::Node &node, int depth) {
+        (void)depth;
+        const GameObject &obj = node.getData();
         if (m_showAllBoundingBoxes || obj.isBoundingBoxActive()) {
             m_renderer->drawBoundingBox(
                 obj.rendererId, obj.getAABBCorner1(), obj.getAABBCorner2());
         }
+    });
+}
+
+// Helper function to check if a node can be added to the current selection
+bool App::canAddToSelection(SceneGraph::Node *nodeToAdd)
+{
+    if (!nodeToAdd) {
+        return false;
     }
+
+    // Check if the node has a parent-child relationship with any selected node
+    for (auto *selectedNode : m_selectedNodes) {
+        if (nodeToAdd->hasParentChildRelationship(selectedNode)) {
+            return false;
+        }
+    }
+
+    return true;
 }

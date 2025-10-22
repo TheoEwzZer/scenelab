@@ -23,6 +23,7 @@ class SceneGraph {
         void addChild(std::unique_ptr<Node> child);
         Node *getParent();
         GameObject &getData();
+        int getChildCount() const { return static_cast<int>(children.size()); }
         void setData(const GameObject &newData);
         Node *getChild(int index);
         void traverse(std::function<void(GameObject &, int)> func, int depth = 0);

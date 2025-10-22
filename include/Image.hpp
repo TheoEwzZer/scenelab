@@ -6,6 +6,7 @@
 #include <memory>
 #include <array>
 
+#include "SceneGraph.hpp"
 #include <glm/glm.hpp>
 #include "GameObject.hpp"
 #include "CameraManager.hpp"
@@ -30,7 +31,8 @@ public:
 private:
     std::unique_ptr<ARenderer> &m_renderer;
 
-    std::vector<GameObject> &m_gameObjects;
+    SceneGraph &m_sceneGraph;
+
 
     const CameraManager &m_cameraManager;
 
@@ -53,7 +55,7 @@ private:
 
 public:
     Image(std::unique_ptr<ARenderer> &renderer,
-        std::vector<GameObject> &gameObjects, const CameraManager &cameraManager);
+        SceneGraph &sceneGraph, const CameraManager &cameraManager);
 
     ~Image() = default;
 
