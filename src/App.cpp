@@ -1376,6 +1376,9 @@ void App::render()
 
     // Update camera matrices
     m_renderer->endFrame();
+
+    // Handle frame export if active
+    m_image->handleFrameExport(m_renderer->getWindow());
 }
 
 void App::run()
