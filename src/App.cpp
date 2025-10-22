@@ -750,7 +750,7 @@ void App::init()
     m_renderer->addDropCallback([&](const std::vector<std::string> &paths,
                                     double mouseX, double mouseY) {
         for (const auto &p : paths) {
-            const std::size_t beforeCount
+            const int beforeCount
                 = m_sceneGraph.getRoot()->getChildCount();
             const bool added
                 = m_image->addImageObjectAtScreenPos(p, mouseX, mouseY);
