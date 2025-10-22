@@ -122,7 +122,7 @@ ARenderer::ARenderer()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(1920, 1080, "Simple example", NULL, NULL);
+    m_window = glfwCreateWindow(1920, 1080, "SceneLab", NULL, NULL);
     if (!m_window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
