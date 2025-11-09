@@ -5,7 +5,7 @@
 #include <cmath>
 
 CameraController::CameraController(
-    CameraManager& cameraManager, std::unique_ptr<ARenderer>& renderer) :
+    CameraManager &cameraManager, std::unique_ptr<ARenderer> &renderer) :
     m_cameraManager(cameraManager),
     m_renderer(renderer)
 {
@@ -46,9 +46,8 @@ void CameraController::registerInputCallbacks()
         GLFW_MOUSE_BUTTON_2, GLFW_RELEASE, [this]() { firstMouse = false; });
 
     // Register mouse movement callback
-    m_renderer->addCursorCallback([this](double x, double y) {
-        handleMouseMovement(x, y, firstMouse);
-    });
+    m_renderer->addCursorCallback(
+        [this](double x, double y) { handleMouseMovement(x, y, firstMouse); });
 }
 
 void CameraController::update()
@@ -139,7 +138,7 @@ void CameraController::renderCameraManagerUI()
             continue; // move to next id (this one is gone)
         }
 
-        if (auto* cam = m_cameraManager.getCamera(id)) {
+        if (auto *cam = m_cameraManager.getCamera(id)) {
             // Pose controls
             glm::vec3 pos = cam->getPosition();
             glm::vec3 rot = cam->getRotation();
@@ -182,10 +181,9 @@ void CameraController::renderCameraManagerUI()
 void CameraController::resetAllCameraPoses()
 {
     for (int id : m_cameraManager.getCameraIds()) {
-        if (auto* cam = m_cameraManager.getCamera(id)) {
+        if (auto *cam = m_cameraManager.getCamera(id)) {
             cam->setPosition(glm::vec3(0.0f, 0.0f, 3.0f));
             cam->setRotation(0.0f, 0.0f, 0.0f);
         }
     }
 }
-

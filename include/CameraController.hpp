@@ -7,7 +7,8 @@
 
 class CameraController {
 public:
-    CameraController(CameraManager& cameraManager, std::unique_ptr<ARenderer>& renderer);
+    CameraController(
+        CameraManager &cameraManager, std::unique_ptr<ARenderer> &renderer);
 
     // Register input callbacks
     void registerInputCallbacks();
@@ -25,8 +26,8 @@ public:
     void handleMouseMovement(double x, double y, bool isRotating);
 
 private:
-    CameraManager& m_cameraManager;
-    std::unique_ptr<ARenderer>& m_renderer;
+    CameraManager &m_cameraManager;
+    std::unique_ptr<ARenderer> &m_renderer;
 
     // Input states
     bool wPressed = false;
@@ -42,4 +43,3 @@ private:
     glm::vec2 mouseDelta = { 0.0f, 0.0f };
     bool firstMouse = false;
 };
-

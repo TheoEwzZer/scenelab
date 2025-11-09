@@ -10,7 +10,8 @@
 
 class GeometryManager {
 public:
-    GeometryManager(SceneGraph& sceneGraph, std::unique_ptr<ARenderer>& renderer);
+    GeometryManager(
+        SceneGraph &sceneGraph, std::unique_ptr<ARenderer> &renderer);
 
     // Initialize geometry window callbacks
     void initGeometryWindow(std::function<void()> onObjectCreated);
@@ -19,11 +20,10 @@ public:
     void renderUI();
 
     // Access to the window for external configuration
-    GeometryImguiWindow& getGeometryWindow() { return m_geometryWindow; }
+    GeometryImguiWindow &getGeometryWindow() { return m_geometryWindow; }
 
 private:
-    SceneGraph& m_sceneGraph;
-    std::unique_ptr<ARenderer>& m_renderer;
+    SceneGraph &m_sceneGraph;
+    std::unique_ptr<ARenderer> &m_renderer;
     GeometryImguiWindow m_geometryWindow;
 };
-

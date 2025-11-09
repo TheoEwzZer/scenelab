@@ -8,7 +8,7 @@
 #include <cmath>
 
 TransformManager::TransformManager(
-    SceneGraph& sceneGraph, std::unique_ptr<ARenderer>& renderer) :
+    SceneGraph &sceneGraph, std::unique_ptr<ARenderer> &renderer) :
     m_sceneGraph(sceneGraph),
     m_renderer(renderer)
 {
@@ -16,7 +16,7 @@ TransformManager::TransformManager(
 
 void TransformManager::clearSelection() { m_selectedNodes.clear(); }
 
-void TransformManager::selectNode(SceneGraph::Node* node)
+void TransformManager::selectNode(SceneGraph::Node *node)
 {
     m_selectedNodes.clear();
     if (node) {
@@ -24,27 +24,27 @@ void TransformManager::selectNode(SceneGraph::Node* node)
     }
 }
 
-void TransformManager::addToSelection(SceneGraph::Node* node)
+void TransformManager::addToSelection(SceneGraph::Node *node)
 {
     if (node && canAddToSelection(node)) {
         m_selectedNodes.push_back(node);
     }
 }
 
-bool TransformManager::isNodeSelected(SceneGraph::Node* node) const
+bool TransformManager::isNodeSelected(SceneGraph::Node *node) const
 {
     return std::find(m_selectedNodes.begin(), m_selectedNodes.end(), node)
         != m_selectedNodes.end();
 }
 
-bool TransformManager::canAddToSelection(SceneGraph::Node* nodeToAdd)
+bool TransformManager::canAddToSelection(SceneGraph::Node *nodeToAdd)
 {
     if (!nodeToAdd) {
         return false;
     }
 
     // Check if the node has a parent-child relationship with any selected node
-    for (auto* selectedNode : m_selectedNodes) {
+    for (auto *selectedNode : m_selectedNodes) {
         if (nodeToAdd->hasParentChildRelationship(selectedNode)) {
             return false;
         }
@@ -57,7 +57,7 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
 {
     // Render scene graph hierarchy with selection
     m_sceneGraph.renderHierarchyUI(
-        m_selectedNodes, leftShiftPressed, [this](SceneGraph::Node* node) {
+        m_selectedNodes, leftShiftPressed, [this](SceneGraph::Node *node) {
             return this->canAddToSelection(node);
         });
 
@@ -118,13 +118,13 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
         // Only apply if there's an actual change
         if (glm::length(delta) > 0.0001f) {
             // Apply delta to all selected objects
-            for (auto* node : m_selectedNodes) {
+            for (auto *node : m_selectedNodes) {
                 node->getData().setPosition(
                     node->getData().getPosition() + delta);
             }
             lastInputPosition = newInputPos;
         }
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
     }
 
     // Rotation
@@ -163,13 +163,13 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
         if (glm::length(deltaDeg) > 0.0001f) {
             glm::vec3 deltaRad = glm::radians(deltaDeg);
             // Apply delta to all selected objects
-            for (auto* node : m_selectedNodes) {
+            for (auto *node : m_selectedNodes) {
                 node->getData().setRotation(
                     node->getData().getRotation() + deltaRad);
             }
             lastInputRotation = newInputRotDeg;
         }
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
     }
 
     // Scale
@@ -204,13 +204,13 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
         // Only apply if there's an actual change
         if (glm::length(scaleRatio - glm::vec3(1.0f)) > 0.0001f) {
             // Apply scale ratio to all selected objects
-            for (auto* node : m_selectedNodes) {
+            for (auto *node : m_selectedNodes) {
                 node->getData().setScale(
                     node->getData().getScale() * scaleRatio);
             }
             lastInputScale = newInputScale;
         }
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
     }
 
     ImGui::Separator();
@@ -249,7 +249,7 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
     }
 
     if (m_selectedNodes.size() == 1) {
-        GameObject& obj = m_selectedNodes[0]->getData();
+        GameObject &obj = m_selectedNodes[0]->getData();
         bool isBBoxActive = obj.isBoundingBoxActive();
         if (ImGui::Checkbox("Show Selected Object's BBox", &isBBoxActive)) {
             obj.setBoundingBoxActive(isBBoxActive);
@@ -258,13 +258,13 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
         ImGui::Text("Toggle individual BBoxes:");
 
         if (ImGui::Button("Enable All Selected")) {
-            for (auto* node : m_selectedNodes) {
+            for (auto *node : m_selectedNodes) {
                 node->getData().setBoundingBoxActive(true);
             }
         }
         ImGui::SameLine();
         if (ImGui::Button("Disable All Selected")) {
-            for (auto* node : m_selectedNodes) {
+            for (auto *node : m_selectedNodes) {
                 node->getData().setBoundingBoxActive(false);
             }
         }
@@ -273,7 +273,7 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
     ImGui::End();
 }
 
-void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
+void TransformManager::renderCameraGizmo(int cameraId, const Camera &camera,
     ImVec2 imagePos, ImVec2 imageSize, bool isHovered)
 {
     (void)cameraId;
@@ -283,7 +283,7 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
     }
 
     // Use the first selected node for the gizmo
-    auto* primaryNode = m_selectedNodes[0];
+    auto *primaryNode = m_selectedNodes[0];
     auto view = camera.getViewMatrix();
     auto proj = camera.getProjectionMatrix();
     auto worldMatrix = primaryNode->getWorldMatrix();
@@ -308,7 +308,8 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
             break;
     }
 
-    // Store initial transforms for relative manipulation across multiple objects
+    // Store initial transforms for relative manipulation across multiple
+    // objects
     static std::vector<glm::vec3> initialPositions;
     static std::vector<glm::vec3> initialRotations;
     static std::vector<glm::vec3> initialScales;
@@ -331,7 +332,7 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
                 initialRotations.clear();
                 initialScales.clear();
 
-                for (auto* node : m_selectedNodes) {
+                for (auto *node : m_selectedNodes) {
                     initialPositions.push_back(node->getData().getPosition());
                     initialRotations.push_back(node->getData().getRotation());
                     initialScales.push_back(node->getData().getScale());
@@ -403,9 +404,9 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
             glm::vec3 rayDir = glm::normalize(glm::vec3(farWorld - nearWorld));
 
             auto intersectsAABB
-                = [](const glm::vec3& origin, const glm::vec3& dir,
-                      const glm::vec3& bmin, const glm::vec3& bmax,
-                      float& tHit) -> bool {
+                = [](const glm::vec3 &origin, const glm::vec3 &dir,
+                      const glm::vec3 &bmin, const glm::vec3 &bmax,
+                      float &tHit) -> bool {
                 const float EPS = 1e-6f;
                 float tmin = -std::numeric_limits<float>::infinity();
                 float tmax = std::numeric_limits<float>::infinity();
@@ -438,15 +439,16 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
                 return tHit >= 0.0f;
             };
 
-            SceneGraph::Node* bestNode = nullptr;
+            SceneGraph::Node *bestNode = nullptr;
             float bestTHit = std::numeric_limits<float>::infinity();
 
             // Traverse scene graph to find all nodes
-            m_sceneGraph.traverse([&](SceneGraph::Node& node, int depth) {
+            m_sceneGraph.traverse([&](SceneGraph::Node &node, int depth) {
                 (void)depth;
-                const GameObject& obj = node.getData();
+                const GameObject &obj = node.getData();
 
-                // Skip objects without a valid renderer (like the invisible root)
+                // Skip objects without a valid renderer (like the invisible
+                // root)
                 if (obj.rendererId < 0) {
                     return;
                 }
@@ -471,7 +473,7 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
 
                 glm::vec3 wmin(std::numeric_limits<float>::infinity());
                 glm::vec3 wmax(-std::numeric_limits<float>::infinity());
-                for (const auto& c : corners) {
+                for (const auto &c : corners) {
                     glm::vec4 w = M * glm::vec4(c, 1.0f);
                     wmin = glm::min(wmin, glm::vec3(w));
                     wmax = glm::max(wmax, glm::vec3(w));
@@ -496,9 +498,9 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera& camera,
 
 void TransformManager::drawBoundingBoxes()
 {
-    m_sceneGraph.traverse([&](SceneGraph::Node& node, int depth) {
+    m_sceneGraph.traverse([&](SceneGraph::Node &node, int depth) {
         (void)depth;
-        const GameObject& obj = node.getData();
+        const GameObject &obj = node.getData();
         // Only draw bounding boxes for objects that have a valid renderer
         if (obj.rendererId >= 0
             && (m_showAllBoundingBoxes || obj.isBoundingBoxActive())) {
@@ -514,23 +516,23 @@ void TransformManager::deleteSelectedObjects()
         return;
     }
 
-    std::vector<std::pair<int, SceneGraph::Node*>> toDelete;
-    for (auto* node : m_selectedNodes) {
+    std::vector<std::pair<int, SceneGraph::Node *>> toDelete;
+    for (auto *node : m_selectedNodes) {
         // Don't delete the root node
         if (node && node->getParent() && node != m_sceneGraph.getRoot()) {
             int rendererId = node->getData().rendererId;
-            SceneGraph::Node* parent = node->getParent();
+            SceneGraph::Node *parent = node->getParent();
             toDelete.push_back({ rendererId, parent });
         }
     }
 
     m_selectedNodes.clear();
 
-    for (const auto& [rendererId, parent] : toDelete) {
+    for (const auto &[rendererId, parent] : toDelete) {
         m_renderer->removeObject(rendererId);
 
         for (int i = 0; i < parent->getChildCount(); ++i) {
-            auto* child = parent->getChild(i);
+            auto *child = parent->getChild(i);
             if (child && child->getData().rendererId == rendererId) {
                 parent->removeChild(child);
                 break;
@@ -538,4 +540,3 @@ void TransformManager::deleteSelectedObjects()
         }
     }
 }
-

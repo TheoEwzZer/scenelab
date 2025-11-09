@@ -33,7 +33,6 @@ private:
 
     SceneGraph &m_sceneGraph;
 
-
     const CameraManager &m_cameraManager;
 
     ExportSettings m_exportSettings;
@@ -54,8 +53,8 @@ private:
     void captureAndWriteCurrentFrame(GLFWwindow *window);
 
 public:
-    Image(std::unique_ptr<ARenderer> &renderer,
-        SceneGraph &sceneGraph, const CameraManager &cameraManager);
+    Image(std::unique_ptr<ARenderer> &renderer, SceneGraph &sceneGraph,
+        const CameraManager &cameraManager);
 
     ~Image() = default;
 
@@ -66,8 +65,10 @@ public:
         const std::string &path, double mouseX, double mouseY);
 
     // Callback invoked when a new image object is created
-    using OnImageObjectCreated = std::function<void(SceneGraph::Node*)>;
-    void setOnImageObjectCreatedCallback(OnImageObjectCreated callback) {
+    using OnImageObjectCreated = std::function<void(SceneGraph::Node *)>;
+
+    void setOnImageObjectCreatedCallback(OnImageObjectCreated callback)
+    {
         m_onImageObjectCreated = callback;
     }
 

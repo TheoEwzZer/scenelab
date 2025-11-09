@@ -241,6 +241,7 @@ public:
 
     // Expose current UI state for cursor management
     int getUIMode() const { return m_uiMode; }
+
     int getCurrentPrimitiveIndex() const { return m_currentPrimitiveIndex; }
 
 protected:
@@ -261,8 +262,8 @@ protected:
     int m_input_segments;
 
     // Persisted UI state
-    int m_uiMode = 0;                   // 0: Primitive, 1: Shape
-    int m_currentPrimitiveIndex = 0;    // index in primitives list
+    int m_uiMode = 0; // 0: Primitive, 1: Shape
+    int m_currentPrimitiveIndex = 0; // index in primitives list
 
     /**
      * @brief Fonction utilitaire qui instancie une primitive avec les valeurs

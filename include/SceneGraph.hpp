@@ -6,14 +6,14 @@
 #include <functional>
 
 class SceneGraph {
-  public:
+public:
     class Node {
-      private:
+    private:
         std::vector<std::unique_ptr<Node>> children;
         GameObject data;
         Node *parent = nullptr;
 
-      public:
+    public:
         Node() = default;
         ~Node() = default;
 
@@ -24,15 +24,17 @@ class SceneGraph {
         bool removeChild(Node *childToRemove);
         Node *getParent();
         GameObject &getData();
+
         int getChildCount() const { return static_cast<int>(children.size()); }
+
         void setData(const GameObject &newData);
         Node *getChild(int index);
-        void traverse(std::function<void(GameObject &, int)> func, int depth = 0);
+        void traverse(
+            std::function<void(GameObject &, int)> func, int depth = 0);
         void traverse(std::function<void(Node &, int)> func, int depth = 0);
         void traverseWithTransform(
             std::function<void(GameObject &, const glm::mat4 &, int)> func,
-            const glm::mat4 &parentTransform = glm::mat4(1.0f),
-            int depth = 0);
+            const glm::mat4 &parentTransform = glm::mat4(1.0f), int depth = 0);
         glm::mat4 getParentWorldMatrix() const;
         glm::mat4 getWorldMatrix() const;
         bool isAncestorOf(const Node *other) const;
@@ -40,11 +42,10 @@ class SceneGraph {
         bool hasParentChildRelationship(const Node *other) const;
     };
 
-
-  private:
+private:
     std::unique_ptr<Node> root;
 
-  public:
+public:
     SceneGraph() = default;
     ~SceneGraph() = default;
 
@@ -59,8 +60,7 @@ class SceneGraph {
         std::function<void(GameObject &, const glm::mat4 &, int)> func,
         const glm::mat4 &parentTransform = glm::mat4(1.0f));
 
-    void renderHierarchyUI(
-        std::vector<Node *> &selectedNodes,
+    void renderHierarchyUI(std::vector<Node *> &selectedNodes,
         bool isMultiSelectKeyPressed,
         std::function<bool(Node *)> canAddToSelection);
 };

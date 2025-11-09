@@ -57,8 +57,9 @@ public:
 
     void createCameraViews(int id, int width = 512, int height = 512);
     void destroyCameraViews(int id);
-    void renderAllViews(CameraManager& cameraManager);
-    using CameraOverlayCallback = std::function<void(int, const Camera&, ImVec2 imagePos, ImVec2 imageSize, bool isHovered)>;
+    void renderAllViews(CameraManager &cameraManager);
+    using CameraOverlayCallback = std::function<void(int, const Camera &,
+        ImVec2 imagePos, ImVec2 imageSize, bool isHovered)>;
     using BoundingBoxDrawCallback = std::function<void()>;
     void setCameraOverlayCallback(CameraOverlayCallback callback);
     void setBoundingBoxDrawCallback(BoundingBoxDrawCallback callback);
@@ -79,7 +80,7 @@ protected:
         unsigned int fbo = 0;
         unsigned int colorTex = 0;
         unsigned int depthRBO = 0;
-        glm::ivec2 size = {512, 512};
+        glm::ivec2 size = { 512, 512 };
         std::string name = "camera";
         ImVec2 lastPos = ImVec2(0.0f, 0.0f);
         ImVec2 lastSize = ImVec2(512.0f, 512.0f);
@@ -92,7 +93,7 @@ protected:
     bool m_lockCameraWindows = false;
     int m_lockedCameraId = -1;
 
-    void renderCameraViews(const Camera & cam, const CameraView & view);
+    void renderCameraViews(const Camera &cam, const CameraView &view);
     void renderDockableViews(CameraManager &cameraManager);
     GLFWwindow *m_window;
 
