@@ -8,6 +8,7 @@
 #include <unordered_map>
 #define GLFW_INCLUDE_NONE
 #include "CameraManager.hpp"
+#include "Camera.hpp"
 #include <GLFW/glfw3.h>
 
 #include <stdlib.h>
@@ -49,6 +50,7 @@ public:
     // Camera Related
     virtual void setViewMatrix(const glm::mat4 &view) = 0;
     virtual void setProjectionMatrix(const glm::mat4 &proj) = 0;
+    virtual void setProjectionMode(Camera::ProjectionMode mode) = 0;
 
     // Rendering Related
     virtual void drawAll() = 0;

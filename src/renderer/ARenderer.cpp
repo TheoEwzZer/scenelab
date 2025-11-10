@@ -260,6 +260,7 @@ void ARenderer::renderCameraViews(const Camera &cam, const CameraView &view)
 
     // Update view and projection matrices
     setViewMatrix(cam.getViewMatrix());
+    setProjectionMode(cam.getProjectionMode());
     setProjectionMatrix(cam.getProjectionMatrix());
 
     // Draw scene

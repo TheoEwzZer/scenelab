@@ -33,6 +33,7 @@ private:
 
     glm::mat4 m_viewMatrix { 1.0f };
     glm::mat4 m_projMatrix { 1.0f };
+    Camera::ProjectionMode m_projectionMode { Camera::ProjectionMode::Perspective };
 
     ShaderProgram m_lightingShader;
     ShaderProgram m_vectorialShader;
@@ -91,6 +92,11 @@ public:
     void setProjectionMatrix(const glm::mat4 &proj) override
     {
         m_projMatrix = proj;
+    }
+
+    void setProjectionMode(Camera::ProjectionMode mode) override
+    {
+        m_projectionMode = mode;
     }
 
     // Rendering related

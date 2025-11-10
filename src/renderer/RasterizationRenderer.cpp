@@ -500,9 +500,7 @@ void RasterizationRenderer::drawSkybox()
     glm::mat4 view = glm::mat4(glm::mat3(m_viewMatrix));
     m_skyboxShader.setMat4("view", view);
 
-    const bool isOrthographicProjection
-        = std::abs(m_projMatrix[3][3] - 1.0f) < 1e-6f;
-    if (isOrthographicProjection) {
+    if (m_projectionMode == Camera::ProjectionMode::Orthographic) {
         GLint vp[4] = { 0, 0, 1, 1 };
         glGetIntegerv(GL_VIEWPORT, vp);
         const float aspect
