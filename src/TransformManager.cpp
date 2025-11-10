@@ -289,6 +289,8 @@ void TransformManager::renderCameraGizmo(int cameraId, const Camera &camera,
     auto worldMatrix = primaryNode->getWorldMatrix();
     auto parentWorldMatrix = primaryNode->getParentWorldMatrix();
 
+    ImGuizmo::SetOrthographic(
+        camera.getProjectionMode() == Camera::ProjectionMode::Orthographic);
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(imagePos.x, imagePos.y, imageSize.x, imageSize.y);
 
