@@ -38,6 +38,14 @@ void GeometryImguiWindow::render()
         m_cylinderCount++;
     }
 
+    ImGui::Spacing();
+    ImGui::SeparatorText("Parametric curve");
+    ImGui::SliderInt("Control Point", &m_nbControlPoint, 5, 10);
+    if (ImGui::Button("Spawn Cylinder") && onSpawnCylinder) {
+        onSpawnCylinder(m_cylinderRadius, m_cylinderHeight, m_cylinderSectors);
+        m_cylinderCount++;
+    }
+
     ImGui::NewLine();
     ImGui::SeparatorText("3D obj");
     if (ImGui::Button("Load Model")) {

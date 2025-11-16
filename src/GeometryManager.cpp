@@ -5,6 +5,9 @@
 #include <format>
 #include <glm/glm.hpp>
 
+#include "objects/Object2D.h++"
+#include "objects/Object3D.h++"
+
 GeometryManager::GeometryManager(
     SceneGraph &sceneGraph, std::unique_ptr<ARenderer> &renderer) :
     m_sceneGraph(sceneGraph),
@@ -21,7 +24,7 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
             rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
 
         new_obj.rendererId = m_renderer->registerObject(
-            data.vertices, {}, randomColor, false);
+            std::make_unique<Object3D>(data.vertices, std::vector<unsigned int>{}), randomColor);
         new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
         new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
         new_obj.setName(std::format("Cube {}", m_geometryWindow.m_cubeCount));
@@ -49,7 +52,7 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
                   rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
 
               new_obj.rendererId = m_renderer->registerObject(
-                  data.vertices, {}, randomColor, false);
+                  std::make_unique<Object3D>(data.vertices, std::vector<unsigned int>{}), randomColor);
               new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
               new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
               new_obj.setName(
@@ -78,7 +81,7 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
             rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
 
         new_obj.rendererId = m_renderer->registerObject(
-            data.vertices, {}, randomColor, false);
+        std::make_unique<Object3D>(data.vertices, std::vector<unsigned int>{}), randomColor);
         new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
         new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
         new_obj.setName(
@@ -127,7 +130,7 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
             rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
 
         new_obj.rendererId = m_renderer->registerObject(
-            data.vertices, {}, randomColor, false);
+        std::make_unique<Object3D>(data.vertices, std::vector<unsigned int>{}), randomColor);
         new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
         new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
 

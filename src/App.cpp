@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "objects/Light.h++"
+
 App::App()
 {
     m_renderer = std::make_unique<RasterizationRenderer>();
@@ -76,8 +78,8 @@ void App::init()
     std::unique_ptr<SceneGraph::Node> lightNode
         = std::make_unique<SceneGraph::Node>();
     lightNode->setData(GameObject());
-    lightNode->getData().rendererId = m_renderer->registerObject(
-        lightGeometry.vertices, {}, "../assets/wish-you-where-here.jpg", true);
+    lightNode->getData().rendererId = m_renderer->registerObject(std::make_unique<Light>(lightGeometry.vertices, std::vector<unsigned int>{}),
+        "../assets/wish-you-where-here.jpg");
     lightNode->getData().setAABB(
         lightGeometry.aabbCorner1, lightGeometry.aabbCorner2);
     lightNode->getData().setName("Point Light");

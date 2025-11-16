@@ -9,27 +9,12 @@
 #include <string>
 #include <vector>
 
-enum class FilterMode : int { None = 0, Grayscale, Sharpen, EdgeDetect, Blur };
+#include <memory>
 
 enum class ToneMappingMode : int { Off = 0, Reinhard, ACES };
 
 class RasterizationRenderer : public ARenderer {
 private:
-    struct RenderObject {
-        unsigned int VAO, VBO, EBO, bboxVAO { 0 }, bboxVBO { 0 };
-        unsigned int indexCount;
-        bool useIndices = false;
-        glm::mat4 modelMatrix { 1.0f };
-        bool isActive = true;
-        bool isLight = false;
-        bool useTexture = true;
-        glm::vec3 objectColor { 1.0f, 1.0f, 1.0f };
-        bool is2D = false;
-        int textureHandle = -1;
-        FilterMode filterMode = FilterMode::None;
-        float filterStrength = 1.0f;
-        bool textureIsProcedural = false;
-    };
 
     glm::mat4 m_viewMatrix { 1.0f };
     glm::mat4 m_projMatrix { 1.0f };
@@ -41,7 +26,7 @@ private:
     ShaderProgram m_bboxShader;
     ShaderProgram m_skyboxShader;
 
-    std::vector<RenderObject> m_renderObjects;
+    std::vector<std::unique_ptr<RenderableObject>> m_renderObjects;
     std::vector<int> m_freeSlots;
 
     TextureLibrary m_textureLibrary;
@@ -49,12 +34,15 @@ private:
     unsigned int m_skyboxVAO = 0;
     unsigned int m_skyboxVBO = 0;
 
+    unsigned int m_bboxVAO = 0;
+    unsigned int m_bboxVBO = 0;
+
     ToneMappingMode m_toneMappingMode = ToneMappingMode::Reinhard;
     float m_toneMappingExposure = 1.0f;
 
     void initializeSkyboxGeometry();
-    void drawSkybox();
-    void createBoundingBoxBuffers(RenderObject &obj);
+    void drawSkybox() const;
+    void createBoundingBoxBuffers();
 
 public:
     static constexpr std::array<const char *, 5> FILTER_MODE_LABELS { "None",
@@ -69,18 +57,9 @@ public:
     RasterizationRenderer &operator=(const RasterizationRenderer &) = delete;
 
     // Object Related
-    int registerObject(const std::vector<float> &vertices,
-        const std::vector<unsigned int> &indices,
-        const std::string &texturePath, bool isLight,
-        bool is2D = false) override;
-    int registerObject(const std::vector<float> &vertices,
-        const std::vector<unsigned int> &indices, bool isLight) override;
-    int registerObject(const std::vector<float> &vertices,
-        const std::vector<unsigned int> &indices, const glm::vec3 &color,
-        bool isLight) override;
-    int registerObjectWithTextureHandle(const std::vector<float> &vertices,
-        const std::vector<unsigned int> &indices, int textureHandle,
-        bool isLight = false, bool is2D = false);
+    int registerObject(std::unique_ptr<RenderableObject> obj) override;
+    int registerObject(std::unique_ptr<RenderableObject> obj, const std::string &texturePath) override;
+    int registerObject(std::unique_ptr<RenderableObject> obj, const glm::vec3 &color) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
     void drawBoundingBox(int objectId, const glm::vec3 &corner1,
@@ -113,11 +92,12 @@ public:
     int createSolidColorTexture(const std::string &name,
         const glm::vec3 &color, int width = 1, int height = 1,
         bool srgb = false);
-    void assignTextureToObject(int objectId, int textureHandle);
+    void assignTextureToObject(int objectId, int textureHandle) const;
+    void assignTextureToObject(int objectId, const std::string& texturePath);
     int getObjectTextureHandle(int objectId) const;
-    void setObjectFilter(int objectId, FilterMode mode);
+    void setObjectFilter(int objectId, FilterMode mode) const;
     FilterMode getObjectFilter(int objectId) const;
-    void setObjectUseTexture(int objectId, bool useTexture);
+    void setObjectUseTexture(int objectId, bool useTexture) const;
     bool getObjectUseTexture(int objectId) const;
     const TextureResource *getTextureResource(int handle) const;
 

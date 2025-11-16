@@ -37,6 +37,8 @@ private:
     float m_cylinderRadius { 0.5f };
     float m_cylinderHeight { 1.0f };
     int m_cylinderSectors { 36 };
+
+    int m_nbControlPoint { 5 };
 };
 
 #endif /* GEOMETRYIMGUIWINDOW_H */

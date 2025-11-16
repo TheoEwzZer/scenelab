@@ -24,6 +24,8 @@
 #include <random>
 #include <chrono>
 
+#include "objects/Object3D.h++"
+
 Image::Image(std::unique_ptr<ARenderer> &renderer, SceneGraph &sceneGraph,
     const CameraManager &cameraManager) :
     m_renderer(renderer),
@@ -119,7 +121,7 @@ bool Image::addImageObjectAtScreenPos(
         // Create new object
         GameObject newObject;
         newObject.rendererId
-            = m_renderer->registerObject(quadVertices, {}, path, false);
+            = m_renderer->registerObject(std::make_unique<Object3D>(quadVertices, std::vector<unsigned int>{}), path);
 
         if (newObject.rendererId < 0) {
             setStatusMessage(
@@ -532,7 +534,7 @@ void Image::renderUI()
     }
 
     if (ImGui::Button("Add Color")) {
-        m_paletteColors.push_back(glm::vec4(1.0f));
+        m_paletteColors.emplace_back(1.0f);
     }
 
     ImGui::Separator();
