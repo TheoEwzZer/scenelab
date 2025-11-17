@@ -16,7 +16,7 @@
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
-#include "objects/Light.h++"
+#include "objects/Light.hpp"
 
 namespace {
 constexpr glm::vec3 DEFAULT_LIGHT_COLOR { 1.0f, 1.0f, 1.0f };
@@ -25,8 +25,6 @@ constexpr glm::vec3 DEFAULT_LIGHT_POS { 2.0f, 0.0f, 0.0f };
 
 RasterizationRenderer::RasterizationRenderer()
 {
-    std::cout << "Rasterized Renderer Start" << std::endl;
-
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -77,8 +75,6 @@ RasterizationRenderer::~RasterizationRenderer()
     if (m_skyboxVBO != 0) {
         glDeleteBuffers(1, &m_skyboxVBO);
     }
-
-    std::cout << "Rasterized Renderer Stop" << std::endl;
 }
 
 void RasterizationRenderer::initializeSkyboxGeometry()
@@ -469,7 +465,7 @@ void RasterizationRenderer::assignTextureToObject(
     }
     if (auto &obj = m_renderObjects[objectId]) {
         const TextureResource *res = getTextureResource(textureHandle);
-       obj->assignTexture(res ? textureHandle : -1);
+        obj->assignTexture(res ? textureHandle : -1);
     }
 }
 
@@ -481,8 +477,8 @@ void RasterizationRenderer::assignTextureToObject(
     }
     if (const auto &obj = m_renderObjects[objectId]) {
         const int textureHandle = texturePath.empty()
-        ? -1
-        : m_textureLibrary.loadTexture2D(texturePath, true);
+            ? -1
+            : m_textureLibrary.loadTexture2D(texturePath, true);
         obj->assignTexture(textureHandle);
     }
 }
@@ -492,8 +488,9 @@ int RasterizationRenderer::getObjectTextureHandle(const int objectId) const
     if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
         return -1;
     }
-    if (auto &obj = m_renderObjects[objectId])
+    if (auto &obj = m_renderObjects[objectId]) {
         return obj->getTextureHandle();
+    }
     return -1;
 }
 
@@ -503,8 +500,9 @@ void RasterizationRenderer::setObjectFilter(
     if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
         return;
     }
-    if (auto &obj = m_renderObjects[objectId])
+    if (auto &obj = m_renderObjects[objectId]) {
         obj->setFilterMode(mode);
+    }
 }
 
 FilterMode RasterizationRenderer::getObjectFilter(const int objectId) const
@@ -512,8 +510,9 @@ FilterMode RasterizationRenderer::getObjectFilter(const int objectId) const
     if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
         return FilterMode::None;
     }
-    if (auto &obj = m_renderObjects[objectId])
+    if (auto &obj = m_renderObjects[objectId]) {
         return obj->getFilterMode();
+    }
     return FilterMode::None;
 }
 
@@ -523,8 +522,9 @@ void RasterizationRenderer::setObjectUseTexture(
     if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
         return;
     }
-    if (auto &obj = m_renderObjects[objectId])
+    if (auto &obj = m_renderObjects[objectId]) {
         obj->setUseTexture(useTexture);
+    }
 }
 
 bool RasterizationRenderer::getObjectUseTexture(const int objectId) const
@@ -532,8 +532,9 @@ bool RasterizationRenderer::getObjectUseTexture(const int objectId) const
     if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
         return false;
     }
-    if (auto &obj = m_renderObjects[objectId])
+    if (auto &obj = m_renderObjects[objectId]) {
         return obj->isUsingTexture();
+    }
     return false;
 }
 

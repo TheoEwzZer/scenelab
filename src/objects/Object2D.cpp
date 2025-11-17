@@ -2,14 +2,13 @@
 // Created by clmonn on 11/13/25.
 //
 
-#include "../../include/objects/Object2D.h++"
+#include "../../include/objects/Object2D.hpp"
 
-
- Object2D::Object2D(const std::vector<float> &vertices,
+Object2D::Object2D(const std::vector<float> &vertices,
     const std::vector<unsigned int> &indices, const int textureHandle)
 {
-     init(vertices, indices);
-     this->m_textureHandle = textureHandle;
+    init(vertices, indices);
+    this->m_textureHandle = textureHandle;
 }
 
 void Object2D::init(const std::vector<float> &vertices,
@@ -28,8 +27,7 @@ void Object2D::init(const std::vector<float> &vertices,
     if (vertices.size() % originalStride != 0) {
         std::cerr << "[ERROR] Invalid 2D vertex buffer size." << std::endl;
     }
-    const int vertexCount
-        = static_cast<int>(vertices.size() / originalStride);
+    const int vertexCount = static_cast<int>(vertices.size() / originalStride);
     float minX = std::numeric_limits<float>::max();
     float maxX = std::numeric_limits<float>::lowest();
     float minY = std::numeric_limits<float>::max();
@@ -74,8 +72,8 @@ void Object2D::init(const std::vector<float> &vertices,
         processedVertices.data(), GL_STATIC_DRAW);
 
     if (!processedVertices.empty()) {
-        m_color = glm::vec3(processedVertices[3],
-            processedVertices[4], processedVertices[5]);
+        m_color = glm::vec3(
+            processedVertices[3], processedVertices[4], processedVertices[5]);
     }
 
     if (hasIndices) {
@@ -89,8 +87,8 @@ void Object2D::init(const std::vector<float> &vertices,
     } else {
         EBO = 0;
         constexpr int newStride = 9;
-        indexCount = static_cast<unsigned int>(
-            processedVertices.size() / newStride);
+        indexCount
+            = static_cast<unsigned int>(processedVertices.size() / newStride);
         useIndices = false;
     }
 
@@ -110,18 +108,19 @@ void Object2D::init(const std::vector<float> &vertices,
 }
 
 void Object2D::draw(const ShaderProgram &vectorial,
-    const ShaderProgram &pointLight, const ShaderProgram &lighting,
+    [[maybe_unused]] const ShaderProgram &pointLight,
+    [[maybe_unused]] const ShaderProgram &lighting,
     const TextureLibrary &textures) const
 {
-    const TextureResource *texture = textures.getTextureResource(m_textureHandle);
+    const TextureResource *texture
+        = textures.getTextureResource(m_textureHandle);
 
     vectorial.use();
     vectorial.setMat4("model", modelMatrix);
     const bool useTexture = this->m_useTexture && texture
         && texture->target == TextureTarget::Texture2D;
     vectorial.setBool("useTexture", useTexture);
-    vectorial.setInt(
-        "filterMode", static_cast<int>(filterMode));
+    vectorial.setInt("filterMode", static_cast<int>(filterMode));
     glm::vec2 texelSize = useTexture
         ? glm::vec2(1.0f / static_cast<float>(texture->size.x),
             1.0f / static_cast<float>(texture->size.y))
@@ -129,7 +128,6 @@ void Object2D::draw(const ShaderProgram &vectorial,
     vectorial.setVec2("texelSize", texelSize);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 
     if (texture) {
         if (texture->target == TextureTarget::Texture2D) {
@@ -147,6 +145,5 @@ void Object2D::draw(const ShaderProgram &vectorial,
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
     }
     glBindVertexArray(0);
-     glDisable(GL_BLEND);
-
+    glDisable(GL_BLEND);
 }

@@ -17,7 +17,7 @@
 #include <memory>
 #include <imgui.h>
 
-#include "RenderableObject.h++"
+#include "RenderableObject.hpp"
 
 struct ImVec2;
 
@@ -32,11 +32,12 @@ public:
     void init();
 
     // Object Related
-    virtual int registerObject(std::unique_ptr<RenderableObject> obj)
+    virtual int registerObject(std::unique_ptr<RenderableObject> obj) = 0;
+    virtual int registerObject(
+        std::unique_ptr<RenderableObject> obj, const std::string &texturePath)
         = 0;
-    virtual int registerObject(std::unique_ptr<RenderableObject> obj, const std::string &texturePath)
-        = 0;
-    virtual int registerObject(std::unique_ptr<RenderableObject> obj, const glm::vec3 &color)
+    virtual int registerObject(
+        std::unique_ptr<RenderableObject> obj, const glm::vec3 &color)
         = 0;
     virtual void updateTransform(int objectId, const glm::mat4 &modelMatrix)
         = 0;

@@ -18,13 +18,17 @@
 #include <glad/gl.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include "stb_image_write.h"
+#pragma GCC diagnostic pop
 #include "stb_image.h"
 
 #include <random>
 #include <chrono>
 
-#include "objects/Object3D.h++"
+#include "objects/Object3D.hpp"
 
 Image::Image(std::unique_ptr<ARenderer> &renderer, SceneGraph &sceneGraph,
     const CameraManager &cameraManager) :

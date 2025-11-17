@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "objects/Light.h++"
+#include "objects/Light.hpp"
 
 App::App()
 {
@@ -78,7 +78,9 @@ void App::init()
     std::unique_ptr<SceneGraph::Node> lightNode
         = std::make_unique<SceneGraph::Node>();
     lightNode->setData(GameObject());
-    lightNode->getData().rendererId = m_renderer->registerObject(std::make_unique<Light>(lightGeometry.vertices, std::vector<unsigned int>{}),
+    lightNode->getData().rendererId = m_renderer->registerObject(
+        std::make_unique<Light>(
+            lightGeometry.vertices, std::vector<unsigned int> {}),
         "../assets/wish-you-where-here.jpg");
     lightNode->getData().setAABB(
         lightGeometry.aabbCorner1, lightGeometry.aabbCorner2);

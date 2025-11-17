@@ -15,10 +15,11 @@ enum class ToneMappingMode : int { Off = 0, Reinhard, ACES };
 
 class RasterizationRenderer : public ARenderer {
 private:
-
     glm::mat4 m_viewMatrix { 1.0f };
     glm::mat4 m_projMatrix { 1.0f };
-    Camera::ProjectionMode m_projectionMode { Camera::ProjectionMode::Perspective };
+    Camera::ProjectionMode m_projectionMode {
+        Camera::ProjectionMode::Perspective
+    };
 
     ShaderProgram m_lightingShader;
     ShaderProgram m_vectorialShader;
@@ -58,8 +59,10 @@ public:
 
     // Object Related
     int registerObject(std::unique_ptr<RenderableObject> obj) override;
-    int registerObject(std::unique_ptr<RenderableObject> obj, const std::string &texturePath) override;
-    int registerObject(std::unique_ptr<RenderableObject> obj, const glm::vec3 &color) override;
+    int registerObject(std::unique_ptr<RenderableObject> obj,
+        const std::string &texturePath) override;
+    int registerObject(std::unique_ptr<RenderableObject> obj,
+        const glm::vec3 &color) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
     void drawBoundingBox(int objectId, const glm::vec3 &corner1,
@@ -93,7 +96,7 @@ public:
         const glm::vec3 &color, int width = 1, int height = 1,
         bool srgb = false);
     void assignTextureToObject(int objectId, int textureHandle) const;
-    void assignTextureToObject(int objectId, const std::string& texturePath);
+    void assignTextureToObject(int objectId, const std::string &texturePath);
     int getObjectTextureHandle(int objectId) const;
     void setObjectFilter(int objectId, FilterMode mode) const;
     FilterMode getObjectFilter(int objectId) const;

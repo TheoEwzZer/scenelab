@@ -4,7 +4,7 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 
-#include "objects/Object2D.h++"
+#include "objects/Object2D.hpp"
 
 using namespace Vect;
 
@@ -35,7 +35,8 @@ void UIDrawer::renderUIShape(App *app)
                 house.setColor({ m_fillColor[0], m_fillColor[1],
                     m_fillColor[2], m_fillColor[3] });
                 house.rendererId = app->m_renderer->registerObject(
-                    std::make_unique<Object2D>(house.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        house.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(house);
             }
             break;
@@ -45,7 +46,8 @@ void UIDrawer::renderUIShape(App *app)
                 doll.setColor({ m_fillColor[0], m_fillColor[1], m_fillColor[2],
                     m_fillColor[3] });
                 doll.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(doll.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        doll.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(doll);
             }
             break;
@@ -55,7 +57,8 @@ void UIDrawer::renderUIShape(App *app)
                 letter.setColor({ m_fillColor[0], m_fillColor[1],
                     m_fillColor[2], m_fillColor[3] });
                 letter.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(letter.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        letter.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(letter);
             }
             break;
@@ -94,7 +97,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                     glm::vec2(m_line_pointB[0], m_line_pointB[1]),
                     m_outlineWidth);
                 p.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;
@@ -103,7 +107,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                 auto p = instanciatePrimitiveWAttributes<
                     Vect::Primitive::Triangle>();
                 p.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;
@@ -114,7 +119,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                     = instanciatePrimitiveWAttributes<Vect::Primitive::Square>(
                         m_circle_radius);
                 p.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;
@@ -125,7 +131,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                     Vect::Primitive::Rectangle>(
                     glm::vec2(m_localScale[0], m_localScale[1]));
                 p.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;
@@ -135,7 +142,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                 auto p = instanciatePrimitiveWAttributes<
                     Vect::Primitive::RegularPolygon>(m_input_segments);
                 p.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;
@@ -146,7 +154,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                     = instanciatePrimitiveWAttributes<Vect::Primitive::Circle>(
                         m_circle_radius);
                 p.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;
@@ -157,7 +166,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                     Vect::Primitive::Ellipse>(
                     glm::vec2(m_localScale[0], m_localScale[1]));
                 p.rendererId = app->m_renderer->registerObject(
-                std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;
@@ -168,7 +178,8 @@ void UIDrawer::renderUIPrimitive(App *app)
                     = instanciatePrimitiveWAttributes<Vect::Primitive::Point>(
                         0.1f);
                 p.rendererId = app->m_renderer->registerObject(
-                    std::make_unique<Object2D>(p.getVertices(), std::vector<unsigned int>{}));
+                    std::make_unique<Object2D>(
+                        p.getVertices(), std::vector<unsigned int> {}));
                 app->registerObject(p);
             }
             break;

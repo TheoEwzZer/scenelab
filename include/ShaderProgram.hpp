@@ -10,13 +10,15 @@
 
 class ShaderProgram {
 public:
-    void init(const std::string& vertexShaderPath, const std::string& fragmentShaderPath)
+    void init(const std::string &vertexShaderPath,
+        const std::string &fragmentShaderPath)
     {
         int success;
         char infoLog[512];
 
         // Vertex shader
-        const std::string vertexShaderString = parseFileToString(vertexShaderPath);
+        const std::string vertexShaderString
+            = parseFileToString(vertexShaderPath);
         const char *vertexShaderSource = vertexShaderString.c_str();
 
         const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -69,38 +71,38 @@ public:
 
     void use() const { glUseProgram(m_shaderProgram); }
 
-    void setVec3(const std::string& uniformName, const glm::vec3 vec3) const
+    void setVec3(const std::string &uniformName, const glm::vec3 vec3) const
     {
         glUniform3f(glGetUniformLocation(m_shaderProgram, uniformName.c_str()),
             vec3.x, vec3.y, vec3.z);
     }
 
-    void setVec2(const std::string& uniformName, const glm::vec2 vec2) const
+    void setVec2(const std::string &uniformName, const glm::vec2 vec2) const
     {
         glUniform2f(glGetUniformLocation(m_shaderProgram, uniformName.c_str()),
             vec2.x, vec2.y);
     }
 
-    void setMat4(const std::string& uniformName, glm::mat4 mat4) const
+    void setMat4(const std::string &uniformName, glm::mat4 mat4) const
     {
         glUniformMatrix4fv(
             glGetUniformLocation(m_shaderProgram, uniformName.c_str()), 1,
             GL_FALSE, glm::value_ptr(mat4));
     }
 
-    void setBool(const std::string& uniformName, const bool value) const
+    void setBool(const std::string &uniformName, const bool value) const
     {
         glUniform1i(
             glGetUniformLocation(m_shaderProgram, uniformName.c_str()), value);
     }
 
-    void setInt(const std::string& uniformName, const int value) const
+    void setInt(const std::string &uniformName, const int value) const
     {
         glUniform1i(
             glGetUniformLocation(m_shaderProgram, uniformName.c_str()), value);
     }
 
-    void setFloat(const std::string& uniformName, const float value) const
+    void setFloat(const std::string &uniformName, const float value) const
     {
         glUniform1f(
             glGetUniformLocation(m_shaderProgram, uniformName.c_str()), value);

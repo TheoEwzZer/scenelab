@@ -138,9 +138,5 @@ GData OBJLoader::loadOBJ(
     data.aabbCorner1 = minBounds;
     data.aabbCorner2 = maxBounds;
 
-    std::cout << std::format(
-        "[INFO] Loaded OBJ | {} ({} positions, {} vertices)\n", filepath,
-        positions.size(), data.vertices.size() / 8);
-
     return data;
 }

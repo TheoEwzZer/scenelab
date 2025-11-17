@@ -2,22 +2,21 @@
 // Created by clmonn on 11/13/25.
 //
 
-#include "../../include/objects/Object3D.h++"
+#include "../../include/objects/Object3D.hpp"
 
- Object3D::Object3D(const std::vector<float> &vertices,
+Object3D::Object3D(const std::vector<float> &vertices,
     const std::vector<unsigned int> &indices, const glm::vec3 &color)
 {
-     init(vertices, indices);
-     m_color = color;
+    init(vertices, indices);
+    m_color = color;
 }
 
- Object3D::Object3D(const std::vector<float> &vertices,
+Object3D::Object3D(const std::vector<float> &vertices,
     const std::vector<unsigned int> &indices, const int textureHandle)
 {
-     init(vertices, indices);
-     this->m_textureHandle = textureHandle;
+    init(vertices, indices);
+    this->m_textureHandle = textureHandle;
 }
-
 
 void Object3D::init(const std::vector<float> &vertices,
     const std::vector<unsigned int> &indices)
@@ -60,10 +59,12 @@ void Object3D::init(const std::vector<float> &vertices,
     isActive = true;
 }
 
-void Object3D::draw(const ShaderProgram &vectorial,
-    const ShaderProgram &pointLight, const ShaderProgram &lighting, const TextureLibrary& textures) const
+void Object3D::draw([[maybe_unused]] const ShaderProgram &vectorial,
+    [[maybe_unused]] const ShaderProgram &pointLight,
+    const ShaderProgram &lighting, const TextureLibrary &textures) const
 {
-     const TextureResource* texture = textures.getTextureResource(m_textureHandle);
+    const TextureResource *texture
+        = textures.getTextureResource(m_textureHandle);
 
     lighting.use();
     lighting.setMat4("model", modelMatrix);
@@ -71,8 +72,7 @@ void Object3D::draw(const ShaderProgram &vectorial,
         && texture->target == TextureTarget::Texture2D;
     lighting.setBool("useTexture", useTexture);
     lighting.setVec3("objectColor", m_color);
-    lighting.setInt(
-        "filterMode", static_cast<int>(filterMode));
+    lighting.setInt("filterMode", static_cast<int>(filterMode));
     glm::vec2 texelSize = useTexture
         ? glm::vec2(1.0f / static_cast<float>(texture->size.x),
             1.0f / static_cast<float>(texture->size.y))
@@ -95,5 +95,4 @@ void Object3D::draw(const ShaderProgram &vectorial,
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
     }
     glBindVertexArray(0);
-
 }
