@@ -21,7 +21,6 @@
 App::App()
 {
     m_renderer = std::make_unique<RasterizationRenderer>();
-    m_rasterRenderer = static_cast<RasterizationRenderer *>(m_renderer.get());
 
     // Initialize managers
     m_geometryManager
@@ -31,9 +30,10 @@ App::App()
     m_cameraController
         = std::make_unique<CameraController>(m_camera, m_renderer);
 
-    if (m_rasterRenderer) {
+    if (auto *rasterRenderer
+        = dynamic_cast<RasterizationRenderer *>(m_renderer.get())) {
         m_textureManager = std::make_unique<TextureManager>(
-            m_sceneGraph, *m_transformManager, *m_rasterRenderer);
+            m_sceneGraph, *m_transformManager, *rasterRenderer);
     }
 
     m_image = std::make_unique<Image>(m_renderer, m_sceneGraph, m_camera);

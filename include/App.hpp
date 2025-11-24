@@ -61,5 +61,4 @@ public:
 
     std::unique_ptr<ARenderer> m_renderer;
     std::unique_ptr<Image> m_image;
-    RasterizationRenderer *m_rasterRenderer = nullptr;
 };
