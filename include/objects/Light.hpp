@@ -19,11 +19,12 @@ class Light : public RenderableObject {
 
     void useShader(ShaderProgram &shader) const override;
 
-    void setDirectional(const glm::vec3 &color, const glm::vec3 &direction);
+    void setDirectional(const glm::vec3 &color);
     void setPoint(const glm::vec3 &color, float ke, float kl, float kq);
-    void setSpot(const glm::vec3 &color, const glm::vec3 &direction, float ke, float kl, float kq, float p);
+    void setSpot(const glm::vec3 &color, float ke, float kl, float kq, float p);
 
     Type getType(void) const {return m_type;};
+    std::string getNameStr() const;
 
     void setUniforms(int uniformID, const ShaderProgram &lightingShader) const;
 

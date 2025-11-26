@@ -13,7 +13,6 @@ Light::Light(const std::vector<float> &vertices,
     const std::vector<unsigned int> &indices, const glm::vec3 &color)
 {
     init(vertices, indices);
-    // m_color = color;
     m_mat.m_diffuseColor = color;
 }
 
@@ -68,10 +67,9 @@ void Light::useShader(ShaderProgram &shader) const {
     (void) shader;
 }
 
-void Light::setDirectional(const glm::vec3 &color, const glm::vec3 &direction)
+void Light::setDirectional(const glm::vec3 &color)
 {
     m_color = color;
-    m_direction = direction;
     m_type = Directional;
 }
 
@@ -84,15 +82,32 @@ void Light::setPoint(const glm::vec3 &color, float ke, float kl, float kq)
     m_type = Point;
 }
 
-void Light::setSpot(const glm::vec3 &color, const glm::vec3 &direction, float ke, float kl, float kq, float p)
+void Light::setSpot(const glm::vec3 &color, float ke, float kl, float kq, float p)
 {
     m_color = color;
-    m_direction = direction;
     m_ke = ke;
     m_kl = kl;
     m_kq = kq;
     m_p = p;
     m_type = Spot;
+}
+
+std::string Light::getNameStr() const
+{
+    switch (this->m_type) {
+        case Directional:
+            return ("Directional Light");
+            break;
+        case Spot:
+            return ("Spot Light");
+            break;
+        case Point:
+            return ("Point Light");
+            break;
+        default:
+            break;
+    }
+    return ("Light");
 }
 
 void Light::setUniforms(int uniformID, const ShaderProgram &lightingShader) const

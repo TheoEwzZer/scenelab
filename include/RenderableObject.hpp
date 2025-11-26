@@ -71,8 +71,7 @@ public:
 
     void setColor(const glm::vec3 &color)
     {
-        // m_color = color;
-        m_mat = Material({0,0,0}, color, {0,0,0}, {0,0,0});
+        m_mat = Material(m_mat.m_ambientColor, color, m_mat.m_specularColor, m_mat.m_emissiveColor);
         m_useTexture = false;
     }
 

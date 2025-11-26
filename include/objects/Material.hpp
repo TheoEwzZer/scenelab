@@ -5,9 +5,9 @@
 #include "glm/glm.hpp"
 
 struct Material {
-    Material(const glm::vec3 &ambientColor = {0.2f,0.2f,0.2f}, const glm::vec3 diffuseColor = {1.0f,1.0f,1.0f},
-        const glm::vec3 specularColor = {1.0f,1.0f,1.0f}, const glm::vec3 emissiveColor = {0.0f,0.0f,0.0f},
-        float shininess = 0.1f) :
+    Material(const glm::vec3 &ambientColor =  {0.2f,0.2f,0.2f}, const glm::vec3 &diffuseColor = {1.0f,1.0f,1.0f},
+        const glm::vec3 &specularColor = {1.0f,1.0f,1.0f}, const glm::vec3 &emissiveColor = {0.0f,0.0f,0.0f},
+        float shininess = 0.25f) :
         m_ambientColor(ambientColor), m_diffuseColor(diffuseColor),
         m_specularColor(specularColor), m_emissiveColor(emissiveColor),
         m_shininess(shininess) {};
@@ -16,22 +16,16 @@ struct Material {
     glm::vec3 m_ambientColor;
     glm::vec3 m_diffuseColor;
     glm::vec3 m_specularColor;
-    glm::vec3 m_emissiveColor;
+    glm::vec3 m_emissiveColor ;
     float m_shininess;
 
-    static void setShaderUniforms(const ShaderProgram &shader, const Material &mat)
+    void setShaderUniforms(const ShaderProgram &shader) const
     {
-        // shader.setVec3("objectMaterial.ambient", mat.m_ambientColor);
-        // shader.setVec3("objectMaterial.diffuse", mat.m_ambientColor);
-        // shader.setVec3("objectMaterial.specular", mat.m_ambientColor);
-        // shader.setVec3("objectMaterial.emissive", mat.m_ambientColor);
-        // shader.setFloat("objectMaterial.shininess", mat.m_shininess);
-
-        shader.setVec3("objectMaterial.ambient", {0.0,0.0,0.0});
-        shader.setVec3("objectMaterial.diffuse", {0.5,0.5,0.5});
-        shader.setVec3("objectMaterial.specular", {0.5,0.5,0.5});
-        shader.setVec3("objectMaterial.emissive", {0.0,0.0,0.0});
-        shader.setFloat("objectMaterial.shininess", 10.5);
+        shader.setVec3("objectMaterial.ambient", m_ambientColor);
+        shader.setVec3("objectMaterial.diffuse", m_diffuseColor);
+        shader.setVec3("objectMaterial.specular", m_specularColor);
+        shader.setVec3("objectMaterial.emissive", m_emissiveColor);
+        shader.setFloat("objectMaterial.shininess", m_shininess);
     }
 };
 

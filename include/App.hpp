@@ -21,6 +21,7 @@
 #include "CameraController.hpp"
 #include "Vectoriel.hpp"
 #include "Image.hpp"
+#include "illumination/Illumination.hpp"
 #include "renderer/interface/ARenderer.hpp"
 #include "TextureManager.hpp"
 #include "imgui.h"
@@ -48,6 +49,7 @@ private:
     void updateCursor();
 
     Vect::UIDrawer vectorial_ui;
+    Illumination::UIIllumination illumination_ui;
 
 public:
     explicit App();
