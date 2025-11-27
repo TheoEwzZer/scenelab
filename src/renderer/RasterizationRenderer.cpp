@@ -236,6 +236,12 @@ void RasterizationRenderer::updateTransform(
     }
 }
 
+void RasterizationRenderer::updateGeometry(int objectId, const std::vector<float> &vertices){
+    if (objectId >= 0 && objectId < static_cast<int>(m_renderObjects.size())) {
+        m_renderObjects[objectId]->updateGeometry(vertices);
+    }
+}
+
 void RasterizationRenderer::removeObject(const int objectId)
 {
     if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size()))

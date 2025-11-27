@@ -1,6 +1,8 @@
 #include "GeometryManager.hpp"
 #include "GeometryGenerator.hpp"
 #include "OBJLoader.hpp"
+#include "objects/Curve.hpp"
+
 #include <iostream>
 #include <format>
 #include <glm/glm.hpp>
@@ -9,9 +11,10 @@
 #include "objects/Object3D.hpp"
 
 GeometryManager::GeometryManager(
-    SceneGraph &sceneGraph, std::unique_ptr<ARenderer> &renderer) :
+    SceneGraph &sceneGraph, std::unique_ptr<ARenderer> &renderer, ParametricCurveManager &parametricCurveManager) :
     m_sceneGraph(sceneGraph),
-    m_renderer(renderer)
+    m_renderer(renderer),
+    m_parametricCurveManager(parametricCurveManager)
 {
 }
 
@@ -149,6 +152,43 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
             = std::make_unique<SceneGraph::Node>();
         childNode->setData(new_obj);
         m_sceneGraph.getRoot()->addChild(std::move(childNode));
+
+        if (onObjectCreated) {
+            onObjectCreated();
+        }
+    };
+
+    m_geometryWindow.onSpawnParametricCurve = [this, onObjectCreated](int controlPoints) {
+        auto curve = std::make_unique<ParametricCurve>();
+        for (int i = 0; i < controlPoints; ++i) {
+            GameObject point;
+            auto [vertices, aabbCorner1, aabbCorner2] { GeometryGenerator::generateSphere(
+                0.1, 36, 18) };
+            glm::vec3 neutralGray {0.75f, 0.75f, 0.75f};
+
+            point.rendererId = m_renderer->registerObject(
+                std::make_unique<Object3D>(
+                    vertices, std::vector<unsigned int> {}),
+                neutralGray);
+            point.setPosition({ 0.0f, 0.0f, 0.0f });
+            point.setAABB(aabbCorner1, aabbCorner2);
+            point.setName(
+                std::format("Sphere {}", m_geometryWindow.m_sphereCount));
+            m_renderer->updateTransform(
+                point.rendererId, point.getModelMatrix());
+
+            auto childNode = std::make_unique<SceneGraph::Node>();
+            childNode->setData(point);
+            SceneGraph::Node* rawPtr = childNode.get();
+            m_sceneGraph.getRoot()->addChild(std::move(childNode));
+            curve->addControlPoint(rawPtr);
+        }
+        glm::vec3 randomColor { rand() / (float)RAND_MAX,
+            rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
+        int id = m_renderer->registerObject(std::make_unique<Curve>(randomColor));
+        curve->registerCurve(id);
+        curve->updateGeometry(*m_renderer);
+        m_parametricCurveManager.addCurve(std::move(curve));
 
         if (onObjectCreated) {
             onObjectCreated();

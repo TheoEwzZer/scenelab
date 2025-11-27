@@ -41,9 +41,9 @@ void GeometryImguiWindow::render()
     ImGui::Spacing();
     ImGui::SeparatorText("Parametric curve");
     ImGui::SliderInt("Control Point", &m_nbControlPoint, 5, 10);
-    if (ImGui::Button("Spawn Cylinder") && onSpawnCylinder) {
-        onSpawnCylinder(m_cylinderRadius, m_cylinderHeight, m_cylinderSectors);
-        m_cylinderCount++;
+    if (ImGui::Button("Spawn curve") && onSpawnParametricCurve) {
+        onSpawnParametricCurve(m_nbControlPoint);
+        m_curveCount++;
     }
 
     ImGui::NewLine();

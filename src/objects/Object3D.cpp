@@ -28,7 +28,6 @@ void Object3D::init(const std::vector<float> &vertices,
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    std::vector<float> processedVertices;
     useIndices = !indices.empty();
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
         vertices.data(), GL_STATIC_DRAW);

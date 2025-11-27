@@ -23,8 +23,9 @@ App::App()
     m_renderer = std::make_unique<RasterizationRenderer>();
 
     // Initialize managers
+    m_parametricCurveManager = std::make_unique<ParametricCurveManager>(*m_renderer);
     m_geometryManager
-        = std::make_unique<GeometryManager>(m_sceneGraph, m_renderer);
+        = std::make_unique<GeometryManager>(m_sceneGraph, m_renderer, *m_parametricCurveManager);
     m_transformManager
         = std::make_unique<TransformManager>(m_sceneGraph, m_renderer);
     m_cameraController
@@ -147,6 +148,7 @@ void App::update()
 {
     m_image->updateMessageTimer(0.016f);
     m_cameraController->update();
+    m_parametricCurveManager->updateGeometry();
 }
 
 // Move l'objet dans le vecteur
