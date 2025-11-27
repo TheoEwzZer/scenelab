@@ -33,7 +33,7 @@ App::App()
     m_cameraController
         = std::make_unique<CameraController>(m_camera, m_renderer);
 
-    illumination_ui = std::make_unique<Illumination::UIIllumination>(*m_transformManager);
+    illumination_ui = std::make_unique<Illumination::UIIllumination>(*m_transformManager, m_sceneGraph);
     if (m_rasterRenderer) {
         m_textureManager = std::make_unique<TextureManager>(
             m_sceneGraph, *m_transformManager, *m_rasterRenderer);
@@ -76,71 +76,6 @@ void App::init()
     m_sceneGraph.getRoot()->setData(GameObject());
     m_sceneGraph.getRoot()->getData().rendererId = -1; // No renderer
     m_sceneGraph.getRoot()->getData().setName("Scene Root");
-
-    GData lightGeometry = GeometryGenerator::generateSphere(0.5f, 16, 16);
-    std::unique_ptr<SceneGraph::Node> lightNode
-        = std::make_unique<SceneGraph::Node>();
-    lightNode->setData(GameObject());
-
-    auto light = std::make_unique<Light>(
-            lightGeometry.vertices, std::vector<unsigned int> {});
-    // light->setPoint({1,1,1},1.0, 0.09, 0.032);
-    lightNode->getData().setName(light->getNameStr());
-
-    lightNode->getData().rendererId = m_renderer->registerObject(
-        std::move(light),
-        "../assets/wish-you-where-here.jpg");
-    lightNode->getData().setAABB(
-        lightGeometry.aabbCorner1, lightGeometry.aabbCorner2);
-    lightNode->getData().setPosition(glm::vec3(3.0f, 3.0f, 3.0f));
-    lightNode->getData().setScale(glm::vec3(0.2f));
-
-    m_sceneGraph.getRoot()->addChild(std::move(lightNode));
-
-
-     std::unique_ptr<SceneGraph::Node> lightNode2
-        = std::make_unique<SceneGraph::Node>();
-    lightNode2->setData(GameObject());
-
-    auto light2 = std::make_unique<Light>(
-            lightGeometry.vertices, std::vector<unsigned int> {});
-    light2->setPoint({1,0,0},1.0, 0.09, 0.032);
-    lightNode2->getData().setName(light2->getNameStr());
-
-    lightNode2->getData().rendererId = m_renderer->registerObject(
-        std::move(light2),
-        "../assets/wish-you-where-here.jpg");
-    lightNode2->getData().setAABB(
-        lightGeometry.aabbCorner1, lightGeometry.aabbCorner2);
-    lightNode2->getData().setPosition(glm::vec3(3.0f, 3.0f, 3.0f));
-    lightNode2->getData().setScale(glm::vec3(0.2f));
-
-    m_sceneGraph.getRoot()->addChild(std::move(lightNode2));
-
-    std::unique_ptr<SceneGraph::Node> lightNode3
-        = std::make_unique<SceneGraph::Node>();
-    lightNode3->setData(GameObject());
-
-    auto light3 = std::make_unique<Light>(
-            lightGeometry.vertices, std::vector<unsigned int> {});
-    light3->setSpot(
-        glm::vec3(0.0f, 1.0f, 0.0f),
-        1.0f,
-        0.09f,
-        0.032f,
-        10.0f
-    );
-    lightNode3->getData().setName(light3->getNameStr());
-
-    lightNode3->getData().rendererId = m_renderer->registerObject(
-        std::move(light3),
-        "../assets/wish-you-where-here.jpg");
-    lightNode3->getData().setAABB(
-        lightGeometry.aabbCorner1, lightGeometry.aabbCorner2);
-    lightNode3->getData().setPosition(glm::vec3(3.0f, 3.0f, 3.0f));
-    lightNode3->getData().setScale(glm::vec3(0.2f));
-
-    m_sceneGraph.getRoot()->addChild(std::move(lightNode3));
 
     m_sceneGraph.traverseWithTransform(
         [&](GameObject &obj, const glm::mat4 &worldTransform, int depth) {

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../interface/ARenderer.hpp"
+#include "RenderableObject.hpp"
 #include "ShaderProgram.hpp"
+#include "glm/fwd.hpp"
 #include "renderer/TextureLibrary.hpp"
 #include <array>
 #include <glm/glm.hpp>
@@ -50,6 +52,8 @@ public:
         "Grayscale", "Sharpen", "Edge Detect", "Blur" };
     static constexpr std::array<const char *, 3> TONEMAP_LABELS { "Off",
         "Reinhard", "ACES" };
+    static constexpr glm::vec3 DEFAULT_AMBIENT_LIGHT_COLOR {0.1f,0.1f, 0.1f};
+
 
     explicit RasterizationRenderer();
     virtual ~RasterizationRenderer() override;
@@ -68,6 +72,7 @@ public:
     void removeObject(int objectId) override;
     void drawBoundingBox(int objectId, const glm::vec3 &corner1,
         const glm::vec3 &corner2) override;
+    RenderableObject &getRenderable(int objectId) const;
 
     // Camera Related
     void setViewMatrix(const glm::mat4 &view) override { m_viewMatrix = view; }
@@ -130,4 +135,6 @@ public:
     }
 
     const std::vector<int> &getCubemapHandles() const;
+
+    glm::vec3 m_ambientLightColor;
 };

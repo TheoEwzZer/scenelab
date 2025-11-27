@@ -16,18 +16,14 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include "objects/Light.hpp"
 
-namespace {
-constexpr glm::vec3 DEFAULT_LIGHT_COLOR { 1.0f, 1.0f, 1.0f };
-constexpr glm::vec3 DEFAULT_LIGHT_POS { 2.0f, 0.0f, 0.0f };
-constexpr glm::vec3 DEFAULT_AMBIENT_LIGHT_COLOR {0.1f,0.1f, 0.1f};
-}
 
-RasterizationRenderer::RasterizationRenderer()
+RasterizationRenderer::RasterizationRenderer() : m_ambientLightColor(DEFAULT_AMBIENT_LIGHT_COLOR)
 {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -45,7 +41,7 @@ RasterizationRenderer::RasterizationRenderer()
 
     for (auto &shader: {m_vectorialShader, m_lightingShader, m_gouraudLightingShader}) {
         shader.use();
-        shader.setVec3("ambientLightColor", DEFAULT_AMBIENT_LIGHT_COLOR);
+        shader.setVec3("ambientLightColor", m_ambientLightColor);
         shader.setInt("ourTexture", 0);
         shader.setInt("filterMode", 0);
         shader.setVec2("texelSize", glm::vec2(1.0f));
@@ -388,6 +384,8 @@ void RasterizationRenderer::drawAll(const Camera &cam)
     lshader.setMat4("view", m_viewMatrix);
     lshader.setMat4("projection", m_projMatrix);
     lshader.setVec3("viewPosition", cam.getPosition());
+    lshader.setVec3("ambientLightColor", m_ambientLightColor);
+
 
     for (const auto &obj : m_renderObjects)
         if (obj && obj->getStatus()) {
@@ -493,6 +491,17 @@ void RasterizationRenderer::assignTextureToObject(
         const TextureResource *res = getTextureResource(textureHandle);
         obj->assignTexture(res ? textureHandle : -1);
     }
+}
+
+RenderableObject &RasterizationRenderer::getRenderable(int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        throw std::invalid_argument("getRendrable: invalid ObjectID");
+    }
+    if (auto &obj = m_renderObjects[objectId]) {
+        return (*obj);
+    }
+    throw std::invalid_argument("getRendrable: invalid ObjectID");
 }
 
 void RasterizationRenderer::assignMaterialToObject(

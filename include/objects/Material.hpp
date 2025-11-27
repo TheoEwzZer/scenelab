@@ -7,7 +7,7 @@
 struct Material {
     Material(const glm::vec3 &ambientColor =  {0.2f,0.2f,0.2f}, const glm::vec3 &diffuseColor = {1.0f,1.0f,1.0f},
         const glm::vec3 &specularColor = {1.0f,1.0f,1.0f}, const glm::vec3 &emissiveColor = {0.0f,0.0f,0.0f},
-        float shininess = 0.25f) :
+        float shininess = 5.0f) :
         m_ambientColor(ambientColor), m_diffuseColor(diffuseColor),
         m_specularColor(specularColor), m_emissiveColor(emissiveColor),
         m_shininess(shininess) {};

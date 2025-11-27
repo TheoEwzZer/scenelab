@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "GeometryGenerator.hpp"
 #include "TransformManager.hpp"
 #include "objects/Light.hpp"
 #include "GameObject.hpp"
@@ -19,7 +20,7 @@ namespace Illumination {
  */
 class UIIllumination {
 public:
-    UIIllumination(TransformManager &tref);
+    UIIllumination(TransformManager &tref, SceneGraph &sceneGraph);
     ~UIIllumination();
 
     /**
@@ -28,20 +29,28 @@ public:
      */
     void renderUI(App *app);
 
-    void setCurrentColorRGBA(const glm::vec4 &rgba, bool applyFill = true,
-        bool applyOutline = true);
+    void addLightToScene(
+    std::unique_ptr<Light> &light, App *app, const GData &lightGeometry);
+
 
 protected:
-    void renderUIIllumination(App *app);
 
     int m_illumination_model = 0;
     float m_shininess = 10.0f;
-    float m_ambiant_color[3] = {0.1,0.1,0.1};
+    float m_ambient_color[3] = {0.1,0.1,0.1};
     float m_diffuse_color[3] = {0.3,0.3,0.3};
     float m_specular_color[3] = {0.5,0.5,0.5};
     float m_emissive_color[3] = {0,0,0};
 
+    float m_kc = 0.5f;
+    float m_kl = 0.09f;
+    float m_kq = 0.03f;
+    float m_p = 10.0f;
+    float m_ambient_light_color[3] = {0.1,0.1,0.1};
+    float m_light_color[3] = {0.3,0.3,0.3};
+
     TransformManager &m_tref;
+    SceneGraph &m_sceneGraph;
 
     // Persisted UI state
 

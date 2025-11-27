@@ -39,7 +39,7 @@ protected:
 
     glm::vec3 m_color = {1.0,1.0,1.0};
     glm::vec3 m_direction = {-1.0,-1.0,-1.0};
-    float m_ke;
+    float m_kc;
     float m_kl;
     float m_kq;
     float m_p;

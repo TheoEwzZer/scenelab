@@ -73,10 +73,10 @@ void Light::setDirectional(const glm::vec3 &color)
     m_type = Directional;
 }
 
-void Light::setPoint(const glm::vec3 &color, float ke, float kl, float kq)
+void Light::setPoint(const glm::vec3 &color, float kc, float kl, float kq)
 {
     m_color = color;
-    m_ke = ke;
+    m_kc = kc;
     m_kl = kl;
     m_kq = kq;
     m_type = Point;
@@ -85,7 +85,7 @@ void Light::setPoint(const glm::vec3 &color, float ke, float kl, float kq)
 void Light::setSpot(const glm::vec3 &color, float ke, float kl, float kq, float p)
 {
     m_color = color;
-    m_ke = ke;
+    m_kc = ke;
     m_kl = kl;
     m_kq = kq;
     m_p = p;
@@ -127,7 +127,7 @@ void Light::setUniforms(int uniformID, const ShaderProgram &lightingShader) cons
             uniformName = "pointLights[" + std::to_string(uniformID) +  "].";
             lightingShader.setVec3(uniformName + "position", glm::vec3(modelMatrix[3]));
             lightingShader.setVec3(uniformName + "color", m_color);
-            lightingShader.setFloat(uniformName + "ke", m_ke);
+            lightingShader.setFloat(uniformName + "ke", m_kc);
             lightingShader.setFloat(uniformName + "kl", m_kl);
             lightingShader.setFloat(uniformName + "kq", m_kq);
             break;
@@ -136,7 +136,7 @@ void Light::setUniforms(int uniformID, const ShaderProgram &lightingShader) cons
             lightingShader.setVec3(uniformName + "position", glm::vec3(modelMatrix[3]));
             lightingShader.setVec3(uniformName + "color", m_color);
             lightingShader.setVec3(uniformName + "direction", dir);
-            lightingShader.setFloat(uniformName + "ke", m_ke);
+            lightingShader.setFloat(uniformName + "ke", m_kc);
             lightingShader.setFloat(uniformName + "kl", m_kl);
             lightingShader.setFloat(uniformName + "kq", m_kq);
             lightingShader.setFloat(uniformName + "p", m_p);
