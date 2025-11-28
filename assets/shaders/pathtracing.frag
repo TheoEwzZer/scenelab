@@ -204,10 +204,10 @@ const float c_epsilon = 0.0001f;
 const float c_pi = 3.14159265359f;
 const float c_twopi = 2.0f * c_pi;
 const float c_rayPosNormalNudge = 0.01f;
-const int c_numBounces = 3;  // Reduced from 10 for better performance
+const int c_numBounces = 30;
 const float c_superFar = 10000.0f;
 const float c_minimumRayHitTime = 0.1f;
-const int c_numRendersPerFrame = 1;
+const int c_numRendersPerFrame = 30;
 
 bool TestTriangleTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo info, in vec3 a, in vec3 b, in vec3 c, in vec3 precomputedNormal)
 {
@@ -450,13 +450,21 @@ void main()
 
     vec3 rayPosition = viewPos;
 
-    vec2 pixelTarget2D = vec2(FragPos.x * aspectRatio, FragPos.y);
+    // Render multiple samples per frame for faster convergence
+    vec3 currentColor = vec3(0.0);
+    for (int i = 0; i < c_numRendersPerFrame; ++i) {
+        // Add sub-pixel jitter for anti-aliasing
+        vec2 jitter = vec2(RandomFloat01(rngState), RandomFloat01(rngState)) - 0.5;
+        vec2 pixelSize = 2.0 / vec2(textureSize(previousFrame, 0));
+        vec2 jitteredPos = vec2(FragPos.x, FragPos.y) + jitter * pixelSize;
 
-    vec3 rayDirLocal = normalize(vec3(pixelTarget2D, -focalLength));
+        vec2 pixelTarget2D = vec2(jitteredPos.x * aspectRatio, jitteredPos.y);
+        vec3 rayDirLocal = normalize(vec3(pixelTarget2D, -focalLength));
+        vec3 rayDir = viewRotationMatrix * rayDirLocal;
 
-    vec3 rayDir = viewRotationMatrix * rayDirLocal;
-
-    vec3 currentColor = GetColorForRay(rayPosition, rayDir, rngState);
+        currentColor += GetColorForRay(rayPosition, rayDir, rngState);
+    }
+    currentColor /= float(c_numRendersPerFrame);
 
     vec2 uv = gl_FragCoord.xy / vec2(textureSize(previousFrame, 0));
 
@@ -465,7 +473,7 @@ void main()
         accumulatedColor = currentColor;
     } else {
         vec3 previousColor = texture(previousFrame, uv).rgb;
-        float weight = 1.0 / float(iFrame + 1);
+        float weight = float(c_numRendersPerFrame) / float(iFrame * c_numRendersPerFrame + c_numRendersPerFrame);
         accumulatedColor = mix(previousColor, currentColor, weight);
     }
 
