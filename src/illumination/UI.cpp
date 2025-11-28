@@ -31,14 +31,21 @@ void UIIllumination::addLightToScene(
     m_sceneGraph.getRoot()->addChild(std::move(lightNode));
 }
 
+static void setFloat3(float *target_float_3, const glm::vec3 &v)
+{
+    target_float_3[0] = v[0];
+    target_float_3[1] = v[1];
+    target_float_3[2] = v[2];
+}
+
 void UIIllumination::renderUI(App *app)
 {
+    static const char *models[]
+        = { "Lambert", "Phong", "Blinn-Phong", "Gouraud" };
+    static const char *materials_preset[] = { "Brass", "Bronze", "Gold",
+        "Silver", "Copper", "Plastic", "Chrome", "Ceramic" };
 
     if (app->m_rasterRenderer != nullptr) {
-
-        static const char *models[]
-            = { "Lambert", "Phong", "Blinn-Phong", "Gouraud" };
-
         ImGui::Begin("Illumination");
 
         ImGui::Separator();
@@ -51,6 +58,15 @@ void UIIllumination::renderUI(App *app)
 
         ImGui::Separator();
         ImGui::Text("Material");
+
+        if (ImGui::Combo("Preset", &m_mat_preset, materials_preset,
+                IM_ARRAYSIZE(materials_preset))) {
+            setFloat3(m_ambient_color, materials[m_mat_preset].m_ambientColor);
+            setFloat3(m_diffuse_color, materials[m_mat_preset].m_diffuseColor);
+            setFloat3(m_specular_color, materials[m_mat_preset].m_specularColor);
+            setFloat3(m_emissive_color, materials[m_mat_preset].m_emissiveColor);
+            m_shininess = materials[m_mat_preset].m_shininess;
+        }
 
         ImGui::ColorEdit3("Ambient Color", m_ambient_color);
         ImGui::ColorEdit3("Diffuse Color", m_diffuse_color);
@@ -139,11 +155,11 @@ void UIIllumination::renderUI(App *app)
         }
 
         app->m_rasterRenderer->m_ambientLightColor
-        = glm::vec3(m_ambient_light_color[0], m_ambient_light_color[1],
-            m_ambient_light_color[2]);
+            = glm::vec3(m_ambient_light_color[0], m_ambient_light_color[1],
+                m_ambient_light_color[2]);
 
-            ImGui::Separator();
-            ImGui::Text("Create Lights");
+        ImGui::Separator();
+        ImGui::Text("Create Lights");
         if (ImGui::Button("Spawn Directional")) {
             const GData lightGeometry
                 = GeometryGenerator::generateSphere(0.5f, 16, 16);
