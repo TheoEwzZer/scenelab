@@ -7,6 +7,8 @@
 
 #include "objects/Object2D.hpp"
 #include "objects/Object3D.hpp"
+#include "objects/AnalyticalSphere.hpp"
+#include "objects/AnalyticalPlane.hpp"
 
 GeometryManager::GeometryManager(
     SceneGraph &sceneGraph, std::unique_ptr<IRenderer> &renderer) :
@@ -52,11 +54,9 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
                                          int sectors, int stacks,
                                          const MaterialProperties &mat) {
         GameObject new_obj;
-        auto data { GeometryGenerator::generateSphere(
-            radius, sectors, stacks) };
 
-        auto object = std::make_unique<Object3D>(
-            data.vertices, std::vector<unsigned int> {}, mat.color);
+        auto object = std::make_unique<AnalyticalSphere>(
+            radius, sectors, stacks, mat.color);
 
         // Set material properties
         object->setEmissive(mat.emissive);
@@ -66,7 +66,8 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
 
         new_obj.rendererId = m_renderer->registerObject(std::move(object));
         new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
-        new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
+        new_obj.setAABB(glm::vec3(-radius, -radius, -radius),
+            glm::vec3(radius, radius, radius));
         new_obj.setName(
             std::format("Sphere {}", m_geometryWindow.m_sphereCount));
         m_renderer->updateTransform(
@@ -102,6 +103,43 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
         new_obj.setAABB(data.aabbCorner1, data.aabbCorner2);
         new_obj.setName(
             std::format("Cylinder {}", m_geometryWindow.m_cylinderCount));
+        m_renderer->updateTransform(
+            new_obj.rendererId, new_obj.getModelMatrix());
+
+        std::unique_ptr<SceneGraph::Node> childNode
+            = std::make_unique<SceneGraph::Node>();
+        childNode->setData(new_obj);
+        m_sceneGraph.getRoot()->addChild(std::move(childNode));
+
+        if (onObjectCreated) {
+            onObjectCreated();
+        }
+    };
+
+    m_geometryWindow.onSpawnPlane = [this, onObjectCreated](float width,
+                                        float height, const glm::vec3 &normal,
+                                        const MaterialProperties &mat) {
+        GameObject new_obj;
+
+        auto object = std::make_unique<AnalyticalPlane>(
+            width, height, normal, mat.color);
+
+        // Set material properties
+        object->setEmissive(mat.emissive);
+        object->setPercentSpecular(mat.percentSpecular);
+        object->setRoughness(mat.roughness);
+        object->setSpecularColor(mat.specularColor);
+
+        new_obj.rendererId = m_renderer->registerObject(std::move(object));
+        new_obj.setPosition({ 0.0f, 0.0f, 0.0f });
+
+        // Calculate AABB for plane (approximate based on width/height)
+        float halfW = width * 0.5f;
+        float halfH = height * 0.5f;
+        new_obj.setAABB(
+            glm::vec3(-halfW, -0.01f, -halfH), glm::vec3(halfW, 0.01f, halfH));
+        new_obj.setName(
+            std::format("Plane {}", m_geometryWindow.m_planeCount));
         m_renderer->updateTransform(
             new_obj.rendererId, new_obj.getModelMatrix());
 

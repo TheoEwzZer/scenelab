@@ -101,10 +101,56 @@ PathTracingRenderer::PathTracingRenderer(Window &window) : m_window(window)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+    // Create sphere geometry texture (width=1: center.xyz, radius)
+    glGenTextures(1, &m_sphereGeomTexture);
+    glBindTexture(GL_TEXTURE_2D, m_sphereGeomTexture);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA32F, 1, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Create sphere material texture (width=3: color, emissive, specular)
+    glGenTextures(1, &m_sphereMaterialTexture);
+    glBindTexture(GL_TEXTURE_2D, m_sphereMaterialTexture);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA32F, 3, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Create plane geometry texture (width=2: point.xyz + normal.x, normal.yz)
+    glGenTextures(1, &m_planeGeomTexture);
+    glBindTexture(GL_TEXTURE_2D, m_planeGeomTexture);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA32F, 2, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Create plane material texture (width=3: color, emissive, specular)
+    glGenTextures(1, &m_planeMaterialTexture);
+    glBindTexture(GL_TEXTURE_2D, m_planeMaterialTexture);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA32F, 3, 1, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     m_pathTracingShader.use();
     m_pathTracingShader.setInt("triangleGeomTex", 1);
     m_pathTracingShader.setInt("triangleMaterialTex", 2);
     m_pathTracingShader.setInt("numTriangles", 0);
+    m_pathTracingShader.setInt("sphereGeomTex", 3);
+    m_pathTracingShader.setInt("sphereMaterialTex", 4);
+    m_pathTracingShader.setInt("numSpheres", 0);
+    m_pathTracingShader.setInt("planeGeomTex", 5);
+    m_pathTracingShader.setInt("planeMaterialTex", 6);
+    m_pathTracingShader.setInt("numPlanes", 0);
 }
 
 PathTracingRenderer::~PathTracingRenderer()
@@ -115,6 +161,18 @@ PathTracingRenderer::~PathTracingRenderer()
     }
     if (m_triangleMaterialTexture != 0) {
         glDeleteTextures(1, &m_triangleMaterialTexture);
+    }
+    if (m_sphereGeomTexture != 0) {
+        glDeleteTextures(1, &m_sphereGeomTexture);
+    }
+    if (m_sphereMaterialTexture != 0) {
+        glDeleteTextures(1, &m_sphereMaterialTexture);
+    }
+    if (m_planeGeomTexture != 0) {
+        glDeleteTextures(1, &m_planeGeomTexture);
+    }
+    if (m_planeMaterialTexture != 0) {
+        glDeleteTextures(1, &m_planeMaterialTexture);
     }
 }
 
@@ -570,8 +628,31 @@ void PathTracingRenderer::renderCameraViews(
     glBindTexture(GL_TEXTURE_2D, m_triangleMaterialTexture);
     m_pathTracingShader.setInt("triangleMaterialTex", 2);
 
+    // Bind sphere geometry texture to texture unit 3
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, m_sphereGeomTexture);
+    m_pathTracingShader.setInt("sphereGeomTex", 3);
+
+    // Bind sphere material texture to texture unit 4
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, m_sphereMaterialTexture);
+    m_pathTracingShader.setInt("sphereMaterialTex", 4);
+
+    // Bind plane geometry texture to texture unit 5
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, m_planeGeomTexture);
+    m_pathTracingShader.setInt("planeGeomTex", 5);
+
+    // Bind plane material texture to texture unit 6
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, m_planeMaterialTexture);
+    m_pathTracingShader.setInt("planeMaterialTex", 6);
+
     m_pathTracingShader.setInt(
         "numTriangles", static_cast<int>(m_triangles.size()));
+    m_pathTracingShader.setInt(
+        "numSpheres", static_cast<int>(m_spheres.size()));
+    m_pathTracingShader.setInt("numPlanes", static_cast<int>(m_planes.size()));
 
     glBindVertexArray(m_quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -916,6 +997,8 @@ bool PathTracingRenderer::shouldResetCameraAccumulation(
 void PathTracingRenderer::rebuildTriangleArray()
 {
     m_triangles.clear();
+    m_spheres.clear();
+    m_planes.clear();
 
     for (auto &objData : m_objects) {
         if (!objData.renderObject) {
@@ -924,57 +1007,109 @@ void PathTracingRenderer::rebuildTriangleArray()
             continue;
         }
 
-        objData.triangleStartIndex = static_cast<int>(m_triangles.size());
-        std::vector<float> vertices = objData.renderObject->getVertices();
-
+        PrimitiveType primType = objData.renderObject->getPrimitiveType();
         glm::vec3 color = objData.renderObject->getColor();
         glm::vec3 emissive = objData.renderObject->getEmissive();
         float percentSpecular = objData.renderObject->getPercentSpecular();
         float roughness = objData.renderObject->getRoughness();
         glm::vec3 specularColor = objData.renderObject->getSpecularColor();
 
-        // Vertices are in format: x,y,z, u,v, nx,ny,nz per vertex (8 floats)
-        // Each triangle has 3 vertices, so 24 floats per triangle
-        int stride = 8; // position (3) + texcoord (2) + normal (3)
+        if (primType == PrimitiveType::Sphere) {
+            // Extract sphere center from transform matrix
+            glm::vec4 center4
+                = objData.transform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            glm::vec3 center = glm::vec3(center4) / center4.w;
 
-        for (size_t i = 0; i < vertices.size(); i += stride * 3) {
-            if (i + stride * 3 > vertices.size()) {
-                break;
+            // Extract scale to adjust radius (assuming uniform scale)
+            glm::vec3 scaleVec(glm::length(glm::vec3(objData.transform[0])),
+                glm::length(glm::vec3(objData.transform[1])),
+                glm::length(glm::vec3(objData.transform[2])));
+            float scale = (scaleVec.x + scaleVec.y + scaleVec.z) / 3.0f;
+            float radius = objData.renderObject->getSphereRadius() * scale;
+
+            AnalyticalSphereData s;
+            s.center = center;
+            s.radius = radius;
+            s.color = color;
+            s.emissive = emissive;
+            s.percentSpecular = percentSpecular;
+            s.roughness = roughness;
+            s.specularColor = specularColor;
+            m_spheres.push_back(s);
+
+            objData.triangleStartIndex = 0;
+            objData.triangleCount = 0;
+        } else if (primType == PrimitiveType::Plane) {
+            // Extract plane point from transform matrix
+            glm::vec4 point4
+                = objData.transform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            glm::vec3 point = glm::vec3(point4) / point4.w;
+
+            // Transform the normal by the rotation part of the matrix
+            glm::mat3 rotMat = glm::mat3(objData.transform);
+            glm::vec3 localNormal = objData.renderObject->getPlaneNormal();
+            glm::vec3 worldNormal = glm::normalize(rotMat * localNormal);
+
+            AnalyticalPlaneData p;
+            p.point = point;
+            p.normal = worldNormal;
+            p.color = color;
+            p.emissive = emissive;
+            p.percentSpecular = percentSpecular;
+            p.roughness = roughness;
+            p.specularColor = specularColor;
+            m_planes.push_back(p);
+
+            objData.triangleStartIndex = 0;
+            objData.triangleCount = 0;
+        } else {
+            // Mesh - convert to triangles as before
+            objData.triangleStartIndex = static_cast<int>(m_triangles.size());
+            std::vector<float> vertices = objData.renderObject->getVertices();
+
+            // Vertices are in format: x,y,z, u,v, nx,ny,nz per vertex (8
+            // floats) Each triangle has 3 vertices, so 24 floats per triangle
+            int stride = 8; // position (3) + texcoord (2) + normal (3)
+
+            for (size_t i = 0; i < vertices.size(); i += stride * 3) {
+                if (i + stride * 3 > vertices.size()) {
+                    break;
+                }
+
+                Triangle t;
+
+                glm::vec4 v0 = objData.transform
+                    * glm::vec4(
+                        vertices[i], vertices[i + 1], vertices[i + 2], 1.0f);
+                glm::vec4 v1 = objData.transform
+                    * glm::vec4(vertices[i + stride], vertices[i + stride + 1],
+                        vertices[i + stride + 2], 1.0f);
+                glm::vec4 v2 = objData.transform
+                    * glm::vec4(vertices[i + stride * 2],
+                        vertices[i + stride * 2 + 1],
+                        vertices[i + stride * 2 + 2], 1.0f);
+
+                t.v0 = glm::vec3(v0) / v0.w;
+                t.v1 = glm::vec3(v1) / v1.w;
+                t.v2 = glm::vec3(v2) / v2.w;
+
+                // Precompute face normal
+                glm::vec3 e0 = t.v1 - t.v0;
+                glm::vec3 e1 = t.v0 - t.v2;
+                t.normal = glm::normalize(glm::cross(e1, e0));
+
+                t.color = color;
+                t.emissive = emissive;
+                t.percentSpecular = percentSpecular;
+                t.roughness = roughness;
+                t.specularColor = specularColor;
+
+                m_triangles.push_back(t);
             }
 
-            Triangle t;
-
-            glm::vec4 v0 = objData.transform
-                * glm::vec4(
-                    vertices[i], vertices[i + 1], vertices[i + 2], 1.0f);
-            glm::vec4 v1 = objData.transform
-                * glm::vec4(vertices[i + stride], vertices[i + stride + 1],
-                    vertices[i + stride + 2], 1.0f);
-            glm::vec4 v2 = objData.transform
-                * glm::vec4(vertices[i + stride * 2],
-                    vertices[i + stride * 2 + 1], vertices[i + stride * 2 + 2],
-                    1.0f);
-
-            t.v0 = glm::vec3(v0) / v0.w;
-            t.v1 = glm::vec3(v1) / v1.w;
-            t.v2 = glm::vec3(v2) / v2.w;
-
-            // Precompute face normal
-            glm::vec3 e0 = t.v1 - t.v0;
-            glm::vec3 e1 = t.v0 - t.v2;
-            t.normal = glm::normalize(glm::cross(e1, e0));
-
-            t.color = color;
-            t.emissive = emissive;
-            t.percentSpecular = percentSpecular;
-            t.roughness = roughness;
-            t.specularColor = specularColor;
-
-            m_triangles.push_back(t);
+            objData.triangleCount = static_cast<int>(m_triangles.size())
+                - objData.triangleStartIndex;
         }
-
-        objData.triangleCount = static_cast<int>(m_triangles.size())
-            - objData.triangleStartIndex;
     }
 
     // Create separate geometry and material texture data
@@ -1050,9 +1185,140 @@ void PathTracingRenderer::rebuildTriangleArray()
             materialData.data());
     }
 
+    // Build sphere texture data
+    std::vector<float> sphereGeomData;
+    std::vector<float> sphereMaterialData;
+    sphereGeomData.reserve(m_spheres.size() * 4);
+    sphereMaterialData.reserve(m_spheres.size() * 3 * 4);
+
+    for (const auto &s : m_spheres) {
+        // Geometry: 1 pixel per sphere [center.xyz, radius]
+        sphereGeomData.push_back(s.center.x);
+        sphereGeomData.push_back(s.center.y);
+        sphereGeomData.push_back(s.center.z);
+        sphereGeomData.push_back(s.radius);
+
+        // Material: 3 pixels per sphere
+        // Pixel 0: [color.xyz, percentSpecular]
+        sphereMaterialData.push_back(s.color.x);
+        sphereMaterialData.push_back(s.color.y);
+        sphereMaterialData.push_back(s.color.z);
+        sphereMaterialData.push_back(s.percentSpecular);
+
+        // Pixel 1: [emissive.xyz, roughness]
+        sphereMaterialData.push_back(s.emissive.x);
+        sphereMaterialData.push_back(s.emissive.y);
+        sphereMaterialData.push_back(s.emissive.z);
+        sphereMaterialData.push_back(s.roughness);
+
+        // Pixel 2: [specularColor.xyz, padding]
+        sphereMaterialData.push_back(s.specularColor.x);
+        sphereMaterialData.push_back(s.specularColor.y);
+        sphereMaterialData.push_back(s.specularColor.z);
+        sphereMaterialData.push_back(0.0f);
+    }
+
+    int sphereHeight = std::max(1, static_cast<int>(m_spheres.size()));
+    bool sphereNeedsRealloc = (sphereHeight != m_lastSphereTextureHeight);
+
+    // Upload sphere geometry texture
+    glBindTexture(GL_TEXTURE_2D, m_sphereGeomTexture);
+    if (sphereNeedsRealloc) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1, sphereHeight, 0, GL_RGBA,
+            GL_FLOAT,
+            sphereGeomData.empty() ? nullptr : sphereGeomData.data());
+    } else if (!sphereGeomData.empty()) {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, sphereHeight, GL_RGBA,
+            GL_FLOAT, sphereGeomData.data());
+    }
+
+    // Upload sphere material texture
+    glBindTexture(GL_TEXTURE_2D, m_sphereMaterialTexture);
+    if (sphereNeedsRealloc) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 3, sphereHeight, 0, GL_RGBA,
+            GL_FLOAT,
+            sphereMaterialData.empty() ? nullptr : sphereMaterialData.data());
+        m_lastSphereTextureHeight = sphereHeight;
+    } else if (!sphereMaterialData.empty()) {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 3, sphereHeight, GL_RGBA,
+            GL_FLOAT, sphereMaterialData.data());
+    }
+
+    // Build plane texture data
+    std::vector<float> planeGeomData;
+    std::vector<float> planeMaterialData;
+    planeGeomData.reserve(m_planes.size() * 2 * 4);
+    planeMaterialData.reserve(m_planes.size() * 3 * 4);
+
+    for (const auto &p : m_planes) {
+        // Geometry: 2 pixels per plane
+        // Pixel 0: [point.xyz, normal.x]
+        planeGeomData.push_back(p.point.x);
+        planeGeomData.push_back(p.point.y);
+        planeGeomData.push_back(p.point.z);
+        planeGeomData.push_back(p.normal.x);
+
+        // Pixel 1: [normal.yz, padding, padding]
+        planeGeomData.push_back(p.normal.y);
+        planeGeomData.push_back(p.normal.z);
+        planeGeomData.push_back(0.0f);
+        planeGeomData.push_back(0.0f);
+
+        // Material: 3 pixels per plane
+        // Pixel 0: [color.xyz, percentSpecular]
+        planeMaterialData.push_back(p.color.x);
+        planeMaterialData.push_back(p.color.y);
+        planeMaterialData.push_back(p.color.z);
+        planeMaterialData.push_back(p.percentSpecular);
+
+        // Pixel 1: [emissive.xyz, roughness]
+        planeMaterialData.push_back(p.emissive.x);
+        planeMaterialData.push_back(p.emissive.y);
+        planeMaterialData.push_back(p.emissive.z);
+        planeMaterialData.push_back(p.roughness);
+
+        // Pixel 2: [specularColor.xyz, padding]
+        planeMaterialData.push_back(p.specularColor.x);
+        planeMaterialData.push_back(p.specularColor.y);
+        planeMaterialData.push_back(p.specularColor.z);
+        planeMaterialData.push_back(0.0f);
+    }
+
+    int planeHeight = std::max(1, static_cast<int>(m_planes.size()));
+    bool planeNeedsRealloc = (planeHeight != m_lastPlaneTextureHeight);
+
+    // Upload plane geometry texture
+    glBindTexture(GL_TEXTURE_2D, m_planeGeomTexture);
+    if (planeNeedsRealloc) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 2, planeHeight, 0, GL_RGBA,
+            GL_FLOAT, planeGeomData.empty() ? nullptr : planeGeomData.data());
+    } else if (!planeGeomData.empty()) {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 2, planeHeight, GL_RGBA,
+            GL_FLOAT, planeGeomData.data());
+    }
+
+    // Upload plane material texture
+    glBindTexture(GL_TEXTURE_2D, m_planeMaterialTexture);
+    if (planeNeedsRealloc) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 3, planeHeight, 0, GL_RGBA,
+            GL_FLOAT,
+            planeMaterialData.empty() ? nullptr : planeMaterialData.data());
+        m_lastPlaneTextureHeight = planeHeight;
+    } else if (!planeMaterialData.empty()) {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 3, planeHeight, GL_RGBA,
+            GL_FLOAT, planeMaterialData.data());
+    }
+
     m_pathTracingShader.use();
     m_pathTracingShader.setInt("triangleGeomTex", 1);
     m_pathTracingShader.setInt("triangleMaterialTex", 2);
     m_pathTracingShader.setInt(
         "numTriangles", static_cast<int>(m_triangles.size()));
+    m_pathTracingShader.setInt("sphereGeomTex", 3);
+    m_pathTracingShader.setInt("sphereMaterialTex", 4);
+    m_pathTracingShader.setInt(
+        "numSpheres", static_cast<int>(m_spheres.size()));
+    m_pathTracingShader.setInt("planeGeomTex", 5);
+    m_pathTracingShader.setInt("planeMaterialTex", 6);
+    m_pathTracingShader.setInt("numPlanes", static_cast<int>(m_planes.size()));
 }

@@ -11,6 +11,14 @@ uniform sampler2D triangleGeomTex;    // Geometry: v0, v1, v2, normal (3 pixels 
 uniform sampler2D triangleMaterialTex; // Materials: color, emissive, specular (3 pixels per triangle)
 uniform int numTriangles;
 
+uniform sampler2D sphereGeomTex;      // Geometry: center.xyz, radius (1 pixel per sphere)
+uniform sampler2D sphereMaterialTex;  // Materials: color, emissive, specular (3 pixels per sphere)
+uniform int numSpheres;
+
+uniform sampler2D planeGeomTex;       // Geometry: point.xyz, normal.xyz (2 pixels per plane)
+uniform sampler2D planeMaterialTex;   // Materials: color, emissive, specular (3 pixels per plane)
+uniform int numPlanes;
+
 struct SMaterialInfo
 {
     vec3 albedo;
@@ -37,6 +45,36 @@ struct TriangleGeom {
 
 // Material data - only loaded for closest hit (3 fetches)
 struct TriangleMaterial {
+    vec3 color;
+    vec3 emissive;
+    float percentSpecular;
+    float roughness;
+    vec3 specularColor;
+};
+
+// Sphere geometry data
+struct SphereGeom {
+    vec3 center;
+    float radius;
+};
+
+// Sphere material data
+struct SphereMaterial {
+    vec3 color;
+    vec3 emissive;
+    float percentSpecular;
+    float roughness;
+    vec3 specularColor;
+};
+
+// Plane geometry data
+struct PlaneGeom {
+    vec3 point;
+    vec3 normal;
+};
+
+// Plane material data
+struct PlaneMaterial {
     vec3 color;
     vec3 emissive;
     float percentSpecular;
@@ -89,6 +127,79 @@ TriangleMaterial loadTriangleMaterial(int triIndex)
     return m;
 }
 
+// Sphere geometry load
+SphereGeom loadSphereGeom(int sphereIndex)
+{
+    SphereGeom s;
+    // Layout: width=1 pixel per row
+    // Pixel 0: [center.xyz, radius]
+    vec4 p0 = texelFetch(sphereGeomTex, ivec2(0, sphereIndex), 0);
+    s.center = p0.xyz;
+    s.radius = p0.w;
+    return s;
+}
+
+// Sphere material load
+SphereMaterial loadSphereMaterial(int sphereIndex)
+{
+    SphereMaterial m;
+
+    // Layout: width=3 pixels per row
+    // Pixel 0: [color.xyz, percentSpecular]
+    vec4 p0 = texelFetch(sphereMaterialTex, ivec2(0, sphereIndex), 0);
+    m.color = p0.xyz;
+    m.percentSpecular = p0.w;
+
+    // Pixel 1: [emissive.xyz, roughness]
+    vec4 p1 = texelFetch(sphereMaterialTex, ivec2(1, sphereIndex), 0);
+    m.emissive = p1.xyz;
+    m.roughness = p1.w;
+
+    // Pixel 2: [specularColor.xyz, padding]
+    vec4 p2 = texelFetch(sphereMaterialTex, ivec2(2, sphereIndex), 0);
+    m.specularColor = p2.xyz;
+
+    return m;
+}
+
+// Plane geometry load
+PlaneGeom loadPlaneGeom(int planeIndex)
+{
+    PlaneGeom p;
+    // Layout: width=2 pixels per row
+    // Pixel 0: [point.xyz, normal.x]
+    vec4 p0 = texelFetch(planeGeomTex, ivec2(0, planeIndex), 0);
+    p.point = p0.xyz;
+
+    // Pixel 1: [normal.yz, padding, padding]
+    vec4 p1 = texelFetch(planeGeomTex, ivec2(1, planeIndex), 0);
+    p.normal = vec3(p0.w, p1.xy);
+    return p;
+}
+
+// Plane material load
+PlaneMaterial loadPlaneMaterial(int planeIndex)
+{
+    PlaneMaterial m;
+
+    // Layout: width=3 pixels per row
+    // Pixel 0: [color.xyz, percentSpecular]
+    vec4 p0 = texelFetch(planeMaterialTex, ivec2(0, planeIndex), 0);
+    m.color = p0.xyz;
+    m.percentSpecular = p0.w;
+
+    // Pixel 1: [emissive.xyz, roughness]
+    vec4 p1 = texelFetch(planeMaterialTex, ivec2(1, planeIndex), 0);
+    m.emissive = p1.xyz;
+    m.roughness = p1.w;
+
+    // Pixel 2: [specularColor.xyz, padding]
+    vec4 p2 = texelFetch(planeMaterialTex, ivec2(2, planeIndex), 0);
+    m.specularColor = p2.xyz;
+
+    return m;
+}
+
 const float c_epsilon = 0.0001f;
 const float c_pi = 3.14159265359f;
 const float c_twopi = 2.0f * c_pi;
@@ -135,6 +246,51 @@ bool TestTriangleTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo info, i
     return false;
 }
 
+// Ray-sphere intersection test
+bool TestSphereTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo info, in vec3 center, in float radius)
+{
+    vec3 oc = rayPos - center;
+    float a = dot(rayDir, rayDir);
+    float b = 2.0 * dot(oc, rayDir);
+    float c = dot(oc, oc) - radius * radius;
+    float discriminant = b * b - 4.0 * a * c;
+
+    if (discriminant < 0.0) return false;
+
+    float sqrtDisc = sqrt(discriminant);
+    float t = (-b - sqrtDisc) / (2.0 * a);
+
+    // Check first intersection
+    if (t < c_minimumRayHitTime || t >= info.dist) {
+        // Try second intersection
+        t = (-b + sqrtDisc) / (2.0 * a);
+        if (t < c_minimumRayHitTime || t >= info.dist) return false;
+    }
+
+    info.dist = t;
+    vec3 hitPoint = rayPos + t * rayDir;
+    info.normal = normalize(hitPoint - center);
+    return true;
+}
+
+// Ray-plane intersection test (infinite plane)
+bool TestPlaneTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo info, in vec3 point, in vec3 normal)
+{
+    float denom = dot(normal, rayDir);
+
+    // Check if ray is parallel to plane
+    if (abs(denom) < c_epsilon) return false;
+
+    float t = dot(point - rayPos, normal) / denom;
+
+    if (t < c_minimumRayHitTime || t >= info.dist) return false;
+
+    info.dist = t;
+    // Return normal facing the ray
+    info.normal = (denom > 0.0) ? -normal : normal;
+    return true;
+}
+
 uint wang_hash(inout uint seed)
 {
     seed = uint(seed ^ uint(61)) ^ uint(seed >> uint(16));
@@ -171,9 +327,11 @@ vec3 RandomUnitVector(inout uint state)
 
 void TestSceneTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo hitInfo)
 {
-    int closestTriIndex = -1;
+    // Track closest hit: 0=triangle, 1=sphere, 2=plane
+    int closestPrimitiveType = -1;
+    int closestIndex = -1;
 
-    // First pass: find closest hit using geometry only (3 fetches per triangle)
+    // Test triangles
     for (int triIndex = 0; triIndex < numTriangles; ++triIndex) {
         TriangleGeom geom = loadTriangleGeom(triIndex);
         if (TestTriangleTrace(rayPos, rayDir, hitInfo,
@@ -182,18 +340,58 @@ void TestSceneTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo hitInfo)
               geom.v2,
               geom.normal))
         {
-            closestTriIndex = triIndex;
+            closestPrimitiveType = 0;
+            closestIndex = triIndex;
         }
     }
 
-    // Second pass: load materials only for closest hit (3 fetches total)
-    if (closestTriIndex >= 0) {
-        TriangleMaterial mat = loadTriangleMaterial(closestTriIndex);
-        hitInfo.material.albedo = mat.color;
-        hitInfo.material.emissive = mat.emissive;
-        hitInfo.material.percentSpecular = mat.percentSpecular;
-        hitInfo.material.roughness = mat.roughness;
-        hitInfo.material.specularColor = mat.specularColor;
+    // Test spheres
+    for (int sphereIndex = 0; sphereIndex < numSpheres; ++sphereIndex) {
+        SphereGeom geom = loadSphereGeom(sphereIndex);
+        if (TestSphereTrace(rayPos, rayDir, hitInfo, geom.center, geom.radius))
+        {
+            closestPrimitiveType = 1;
+            closestIndex = sphereIndex;
+        }
+    }
+
+    // Test planes
+    for (int planeIndex = 0; planeIndex < numPlanes; ++planeIndex) {
+        PlaneGeom geom = loadPlaneGeom(planeIndex);
+        if (TestPlaneTrace(rayPos, rayDir, hitInfo, geom.point, geom.normal))
+        {
+            closestPrimitiveType = 2;
+            closestIndex = planeIndex;
+        }
+    }
+
+    // Load materials only for closest hit
+    if (closestIndex >= 0) {
+        if (closestPrimitiveType == 0) {
+            // Triangle
+            TriangleMaterial mat = loadTriangleMaterial(closestIndex);
+            hitInfo.material.albedo = mat.color;
+            hitInfo.material.emissive = mat.emissive;
+            hitInfo.material.percentSpecular = mat.percentSpecular;
+            hitInfo.material.roughness = mat.roughness;
+            hitInfo.material.specularColor = mat.specularColor;
+        } else if (closestPrimitiveType == 1) {
+            // Sphere
+            SphereMaterial mat = loadSphereMaterial(closestIndex);
+            hitInfo.material.albedo = mat.color;
+            hitInfo.material.emissive = mat.emissive;
+            hitInfo.material.percentSpecular = mat.percentSpecular;
+            hitInfo.material.roughness = mat.roughness;
+            hitInfo.material.specularColor = mat.specularColor;
+        } else if (closestPrimitiveType == 2) {
+            // Plane
+            PlaneMaterial mat = loadPlaneMaterial(closestIndex);
+            hitInfo.material.albedo = mat.color;
+            hitInfo.material.emissive = mat.emissive;
+            hitInfo.material.percentSpecular = mat.percentSpecular;
+            hitInfo.material.roughness = mat.roughness;
+            hitInfo.material.specularColor = mat.specularColor;
+        }
     }
 }
 

@@ -12,6 +12,8 @@
 
 enum class FilterMode : int { None = 0, Grayscale, Sharpen, EdgeDetect, Blur };
 
+enum class PrimitiveType : int { Mesh = 0, Sphere, Plane };
+
 class RenderableObject {
 protected:
     unsigned int VAO = 0, VBO = 0, EBO = 0;
@@ -34,6 +36,10 @@ protected:
     float m_percentSpecular = 0.0f;
     float m_roughness = 0.5f;
     glm::vec3 m_specularColor = glm::vec3(1.0f);
+
+    PrimitiveType m_primitiveType = PrimitiveType::Mesh;
+    float m_sphereRadius = 0.5f;
+    glm::vec3 m_planeNormal = glm::vec3(0.0f, 1.0f, 0.0f);
 
 public:
     RenderableObject() = default;
@@ -99,6 +105,24 @@ public:
     {
         return m_specularColor;
     }
+
+    void setPrimitiveType(PrimitiveType type) { m_primitiveType = type; }
+
+    [[nodiscard]] PrimitiveType getPrimitiveType() const
+    {
+        return m_primitiveType;
+    }
+
+    void setSphereRadius(float radius) { m_sphereRadius = radius; }
+
+    [[nodiscard]] float getSphereRadius() const { return m_sphereRadius; }
+
+    void setPlaneNormal(const glm::vec3 &normal)
+    {
+        m_planeNormal = glm::normalize(normal);
+    }
+
+    [[nodiscard]] glm::vec3 getPlaneNormal() const { return m_planeNormal; }
 
     void assignTexture(const int textureHandle)
     {

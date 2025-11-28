@@ -53,6 +53,21 @@ void GeometryImguiWindow::render()
     }
 
     ImGui::Spacing();
+    ImGui::SeparatorText("Plane");
+    ImGui::SliderFloat("Plane Width", &m_planeWidth, 0.5f, 20.0f);
+    ImGui::SliderFloat("Plane Height", &m_planeHeight, 0.5f, 20.0f);
+    ImGui::InputFloat3("Normal", m_planeNormal);
+    if (ImGui::Button("Spawn Plane") && onSpawnPlane) {
+        glm::vec3 normal(m_planeNormal[0], m_planeNormal[1], m_planeNormal[2]);
+        if (glm::length(normal) < 0.001f) {
+            normal = glm::vec3(0.0f, 1.0f, 0.0f);
+        }
+        onSpawnPlane(m_planeWidth, m_planeHeight, glm::normalize(normal),
+            m_materialProps);
+        m_planeCount++;
+    }
+
+    ImGui::Spacing();
     ImGui::SeparatorText("Parametric curve");
     ImGui::SliderInt("Control Point", &m_nbControlPoint, 5, 10);
     if (ImGui::Button("Spawn Parametric Curve") && onSpawnCylinder) {

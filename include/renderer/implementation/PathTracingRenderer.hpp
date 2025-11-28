@@ -26,6 +26,26 @@ struct Triangle {
     glm::vec3 specularColor;
 };
 
+struct AnalyticalSphereData {
+    glm::vec3 center;
+    float radius;
+    glm::vec3 color;
+    glm::vec3 emissive;
+    float percentSpecular;
+    float roughness;
+    glm::vec3 specularColor;
+};
+
+struct AnalyticalPlaneData {
+    glm::vec3 point;
+    glm::vec3 normal;
+    glm::vec3 color;
+    glm::vec3 emissive;
+    float percentSpecular;
+    float roughness;
+    glm::vec3 specularColor;
+};
+
 class PathTracingRenderer : public IRenderer {
 private:
     Window &m_window;
@@ -43,6 +63,16 @@ private:
     GLuint m_triangleGeomTexture = 0;
     GLuint m_triangleMaterialTexture = 0;
     int m_lastTriangleTextureHeight = 0;
+
+    std::vector<AnalyticalSphereData> m_spheres;
+    GLuint m_sphereGeomTexture = 0;
+    GLuint m_sphereMaterialTexture = 0;
+    int m_lastSphereTextureHeight = 0;
+
+    std::vector<AnalyticalPlaneData> m_planes;
+    GLuint m_planeGeomTexture = 0;
+    GLuint m_planeMaterialTexture = 0;
+    int m_lastPlaneTextureHeight = 0;
 
     struct ObjectData {
         std::unique_ptr<RenderableObject> renderObject;

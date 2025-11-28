@@ -27,6 +27,9 @@ public:
     std::function<void(float radius, float height, int sectors,
         const MaterialProperties &mat)>
         onSpawnCylinder;
+    std::function<void(float width, float height, const glm::vec3 &normal,
+        const MaterialProperties &mat)>
+        onSpawnPlane;
     std::function<void(const std::string &objName, const std::string &objPath)>
         onLoadModel;
     std::function<void(const std::string &name, const std::string &filepath)>
@@ -35,6 +38,7 @@ public:
     std::size_t m_sphereCount { 0 };
     std::size_t m_cubeCount { 0 };
     std::size_t m_cylinderCount { 0 };
+    std::size_t m_planeCount { 0 };
 
     ModelLibrary m_modelLibrary;
 
@@ -50,6 +54,10 @@ private:
     int m_cylinderSectors { 36 };
 
     int m_nbControlPoint { 5 };
+
+    float m_planeWidth { 5.0f };
+    float m_planeHeight { 5.0f };
+    float m_planeNormal[3] { 0.0f, 1.0f, 0.0f };
 
     MaterialProperties m_materialProps;
 };

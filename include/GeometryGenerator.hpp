@@ -31,6 +31,9 @@ public:
     // sectors = vertical splits
     static GData generateCylinder(float radius, float height, int sectors);
 
+    static GData generatePlane(
+        float width, float height, const glm::vec3 &normal);
+
 private:
     static void addVertex(std::vector<float> &vertices,
         const glm::vec3 &position, const glm::vec2 &texCoord,
