@@ -36,7 +36,8 @@ App::App() : m_window(1920, 1080, "SceneLab")
     m_cameraController
         = std::make_unique<CameraController>(m_camera, m_renderer);
 
-    illumination_ui = std::make_unique<Illumination::UIIllumination>(*m_transformManager, m_sceneGraph);
+    illumination_ui = std::make_unique<Illumination::UIIllumination>(
+        *m_transformManager, m_sceneGraph);
     if (auto *rasterRenderer
         = dynamic_cast<RasterizationRenderer *>(m_renderer.get())) {
         m_textureManager = std::make_unique<TextureManager>(
@@ -81,22 +82,6 @@ void App::init()
     m_sceneGraph.getRoot()->getData().rendererId = -1; // No renderer
     m_sceneGraph.getRoot()->getData().setName("Scene Root");
 
-    GData lightGeometry = GeometryGenerator::generateSphere(0.5f, 16, 16);
-    std::unique_ptr<SceneGraph::Node> lightNode
-        = std::make_unique<SceneGraph::Node>();
-    lightNode->setData(GameObject());
-    lightNode->getData().rendererId = m_renderer->registerObject(
-        std::make_unique<Light>(
-            lightGeometry.vertices, std::vector<unsigned int> {}),
-        "../assets/wish-you-where-here.jpg");
-    lightNode->getData().setAABB(
-        lightGeometry.aabbCorner1, lightGeometry.aabbCorner2);
-    lightNode->getData().setName("Point Light");
-    lightNode->getData().setPosition(glm::vec3(3.0f, 3.0f, 3.0f));
-    lightNode->getData().setScale(glm::vec3(0.2f));
-
-    m_sceneGraph.getRoot()->addChild(std::move(lightNode));
-
     // === PATH TRACING DEMO SCENE ===
 
     // Helper lambda to create spheres easily
@@ -125,6 +110,26 @@ void App::init()
               node->getData().setAABB(glm::vec3(-radius), glm::vec3(radius));
               m_sceneGraph.getRoot()->addChild(std::move(node));
           };
+    auto createLight = [this](glm::vec3 color, glm::vec3 pos,
+                           float intensity = 1.0f) {
+        const GData lightGeometry
+            = GeometryGenerator::generateSphere(0.5f, 16, 16);
+        auto light = std::make_unique<Light>(
+            lightGeometry.vertices, std::vector<unsigned int> {});
+        light->setPoint(glm::vec3(color[0], color[1], color[2]));
+        light->setIntensity(intensity);
+        std::unique_ptr<SceneGraph::Node> lightNode
+            = std::make_unique<SceneGraph::Node>();
+        lightNode->getData().setName(light->getNameStr());
+        lightNode->getData().rendererId
+            = m_renderer->registerObject(std::move(light), "");
+        lightNode->getData().setAABB(
+            lightGeometry.aabbCorner1, lightGeometry.aabbCorner2);
+        lightNode->getData().setPosition(glm::vec3(3.0f, 3.0f, 3.0f));
+        lightNode->getData().setScale(glm::vec3(0.2f));
+        lightNode->getData().setPosition(pos);
+        m_sceneGraph.getRoot()->addChild(std::move(lightNode));
+    };
 
     // Ground plane (reflective dark surface)
     {
@@ -244,19 +249,24 @@ void App::init()
     // === MAIN LIGHT SOURCES ===
 
     // Main area light (warm)
-    createSphere(0.8f, glm::vec3(1.0f, 0.95f, 0.9f),
-        glm::vec3(0.0f, 4.0f, 0.0f), "Main Light", 0.0f, 1.0f, glm::vec3(1.0f),
-        glm::vec3(100.0f, 100.0f, 100.0f));
 
-    // Accent light (cool blue)
-    createSphere(0.3f, glm::vec3(0.7f, 0.85f, 1.0f),
-        glm::vec3(-4.0f, 2.5f, 2.0f), "Blue Accent Light", 0.0f, 1.0f,
-        glm::vec3(1.0f), glm::vec3(3.0f, 4.0f, 8.0f));
+    createLight(glm::vec3(1.0f, 0.95f, 0.9f), glm::vec3(0.0f, 4.0f, 0.0f), 3);
+    createLight(glm::vec3(0.7f, 0.85f, 1.0f), glm::vec3(-4.0f, 2.5f, 2.0f), 0.75);
+    createLight(glm::vec3(1.0f, 0.6f, 0.3f), glm::vec3(4.0f, 2.0f, 1.0f), 0.5);
 
-    // Accent light (warm orange)
-    createSphere(0.25f, glm::vec3(1.0f, 0.6f, 0.3f),
-        glm::vec3(4.0f, 2.0f, 1.0f), "Orange Accent Light", 0.0f, 1.0f,
-        glm::vec3(1.0f), glm::vec3(8.0f, 4.0f, 1.0f));
+    // createSphere(0.8f, glm::vec3(1.0f, 0.95f, 0.9f),
+    //     glm::vec3(0.0f, 4.0f, 0.0f), "Main Light", 0.0f, 1.0f, glm::vec3(1.0f),
+    //     glm::vec3(100.0f, 100.0f, 100.0f));
+
+    // // Accent light (cool blue)
+    // createSphere(0.3f, glm::vec3(0.7f, 0.85f, 1.0f),
+    //     glm::vec3(-4.0f, 2.5f, 2.0f), "Blue Accent Light", 0.0f, 1.0f,
+    //     glm::vec3(1.0f), glm::vec3(3.0f, 4.0f, 8.0f));
+
+    // // Accent light (warm orange)
+    // createSphere(0.25f, glm::vec3(1.0f, 0.6f, 0.3f),
+    //     glm::vec3(4.0f, 2.0f, 1.0f), "Orange Accent Light", 0.0f, 1.0f,
+    //     glm::vec3(1.0f), glm::vec3(8.0f, 4.0f, 1.0f));
 
     // === CENTER PIECE - Large mirror sphere ===
     createSphere(1.0f, glm::vec3(0.95f), glm::vec3(0.0f, 0.0f, 0.0f),

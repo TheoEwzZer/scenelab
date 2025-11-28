@@ -55,7 +55,7 @@ void AnalyticalPlane::draw([[maybe_unused]] const ShaderProgram &vectorial,
         && texture->target == TextureTarget::Texture2D;
     lighting.setBool("useTexture", useTexture);
 
-    m_mat.setShaderUniforms(lighting);
+    m_mat.setRasterShaderUniforms(lighting);
 
     lighting.setInt("filterMode", static_cast<int>(filterMode));
     glm::vec2 texelSize = useTexture

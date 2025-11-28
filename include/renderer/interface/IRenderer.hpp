@@ -62,6 +62,8 @@ public:
     virtual float getObjectRoughness(int objectId) const = 0;
     virtual void setObjectSpecularColor(int objectId, const glm::vec3 &color)
         = 0;
+    virtual void setObjectMaterial(int objectId, const Material &mat)
+        = 0;
     virtual glm::vec3 getObjectSpecularColor(int objectId) const = 0;
     virtual void setObjectIndexOfRefraction(int objectId, float ior) = 0;
     virtual float getObjectIndexOfRefraction(int objectId) const = 0;

@@ -169,6 +169,7 @@ public:
     float getObjectPercentSpecular(int objectId) const override;
     void setObjectRoughness(int objectId, float roughness) override;
     float getObjectRoughness(int objectId) const override;
+    void setObjectMaterial(int objectId, const Material &mat) override;
     void setObjectSpecularColor(int objectId, const glm::vec3 &color) override;
     glm::vec3 getObjectSpecularColor(int objectId) const override;
     void setObjectIndexOfRefraction(int objectId, float ior) override;

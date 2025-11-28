@@ -14,6 +14,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/geometric.hpp>
 
+#define PATH_TRACING_EMISSIVE_MULTIPLIER 1500.0f;
+
 PathTracingRenderer::PathTracingRenderer(Window &window) : m_window(window)
 {
 
@@ -327,7 +329,7 @@ glm::vec3 PathTracingRenderer::getObjectEmissive(int objectId) const
         return glm::vec3(0.0f);
     }
 
-    return m_objects[objectId].renderObject->getEmissive();
+    return m_objects[objectId].renderObject->getEmissive() * PATH_TRACING_EMISSIVE_MULTIPLIER;
 }
 
 void PathTracingRenderer::setObjectPercentSpecular(int objectId, float percent)
@@ -391,6 +393,18 @@ void PathTracingRenderer::setObjectSpecularColor(
     }
 
     m_objects[objectId].renderObject->setSpecularColor(color);
+    m_trianglesDirty = true;
+}
+
+void PathTracingRenderer::setObjectMaterial(int objectId, const Material &mat)
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_objects.size())) {
+        return;
+    }
+    if (!m_objects[objectId].renderObject) {
+        return;
+    }
+    m_objects[objectId].renderObject->setMaterial(mat);
     m_trianglesDirty = true;
 }
 
@@ -1070,7 +1084,7 @@ void PathTracingRenderer::rebuildTriangleArray()
 
         PrimitiveType primType = objData.renderObject->getPrimitiveType();
         glm::vec3 color = objData.renderObject->getColor();
-        glm::vec3 emissive = objData.renderObject->getEmissive();
+        glm::vec3 emissive = objData.renderObject->getEmissive() * PATH_TRACING_EMISSIVE_MULTIPLIER;
         float percentSpecular = objData.renderObject->getPercentSpecular();
         float roughness = objData.renderObject->getRoughness();
         glm::vec3 specularColor = objData.renderObject->getSpecularColor();

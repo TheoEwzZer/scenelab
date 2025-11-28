@@ -29,20 +29,11 @@ protected:
     int m_textureHandle = -1;
     FilterMode filterMode = FilterMode::None;
 
-    // Material for classical illumination (Phong/Blinn-Phong)
     Material m_mat;
 
     // Properties for path tracing
     std::vector<float> m_vertices;
     std::vector<unsigned int> m_indices;
-
-    glm::vec3 m_emissive = glm::vec3(0.0f);
-    float m_percentSpecular = 0.0f;
-    float m_roughness = 0.5f;
-    glm::vec3 m_specularColor = glm::vec3(1.0f);
-
-    float m_indexOfRefraction = 1.0f;
-    float m_refractionChance = 0.0f;
 
     PrimitiveType m_primitiveType = PrimitiveType::Mesh;
     float m_sphereRadius = 0.5f;
@@ -93,48 +84,45 @@ public:
         m_useTexture = false;
     }
 
-    // [[nodiscard]] glm::vec3 getColor() const { return m_color; }
-
     glm::vec3 getColor() const { return m_mat.m_diffuseColor; }
 
     void setEmissive(const glm::vec3 &emissive)
     {
-        m_emissive = emissive;
-        m_mat.m_emissiveColor = emissive; // Sync for rasterization
+        m_mat.m_emissiveColor = emissive;
     }
 
-    [[nodiscard]] glm::vec3 getEmissive() const { return m_emissive; }
+    [[nodiscard]] glm::vec3 getEmissive() const { return m_mat.m_emissiveColor; }
 
-    void setPercentSpecular(float percent) { m_percentSpecular = percent; }
+    void setPercentSpecular(float percent) { m_mat.m_percentSpecular = percent; }
 
     [[nodiscard]] float getPercentSpecular() const
     {
-        return m_percentSpecular;
+        return m_mat.m_percentSpecular;
     }
 
-    void setRoughness(float roughness) { m_roughness = roughness; }
+    void setRoughness(float roughness) { m_mat.m_roughness = roughness; }
 
-    [[nodiscard]] float getRoughness() const { return m_roughness; }
+    [[nodiscard]] float getRoughness() const { return m_mat.m_roughness; }
 
-    void setSpecularColor(const glm::vec3 &color) { m_specularColor = color; }
+    void setSpecularColor(const glm::vec3 &color) { m_mat.m_specularColor = color; }
 
     [[nodiscard]] glm::vec3 getSpecularColor() const
     {
-        return m_specularColor;
+        return m_mat.m_specularColor;
     }
 
-    void setIndexOfRefraction(float ior) { m_indexOfRefraction = ior; }
+    void setIndexOfRefraction(float ior) { m_mat.m_indexOfRefraction = ior; }
 
     [[nodiscard]] float getIndexOfRefraction() const
     {
-        return m_indexOfRefraction;
+        return m_mat.m_indexOfRefraction;
     }
 
-    void setRefractionChance(float chance) { m_refractionChance = chance; }
+    void setRefractionChance(float chance) { m_mat.m_refractionChance = chance; }
 
     [[nodiscard]] float getRefractionChance() const
     {
-        return m_refractionChance;
+        return m_mat.m_refractionChance;
     }
 
     void setPrimitiveType(PrimitiveType type) { m_primitiveType = type; }
