@@ -33,10 +33,10 @@ App::App()
     m_cameraController
         = std::make_unique<CameraController>(m_camera, m_renderer);
 
-    if (dynamic_cast<RasterizationRenderer *>(m_renderer.get())) {
+    if (auto *rasterRenderer
+        = dynamic_cast<RasterizationRenderer *>(m_renderer.get())) {
         m_textureManager = std::make_unique<TextureManager>(
-            m_sceneGraph, *m_transformManager, dynamic_cast<RasterizationRenderer &>(
-                                    *m_renderer));
+            m_sceneGraph, *m_transformManager, *rasterRenderer);
     }
 
     m_image = std::make_unique<Image>(m_renderer, m_sceneGraph, m_camera);
