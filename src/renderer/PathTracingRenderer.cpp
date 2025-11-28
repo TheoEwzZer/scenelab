@@ -7,6 +7,7 @@
 #include "imgui.h"
 #include "renderer/interface/IRenderer.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -1400,4 +1401,29 @@ void PathTracingRenderer::rebuildTriangleArray()
     m_pathTracingShader.setInt("planeGeomTex", 5);
     m_pathTracingShader.setInt("planeMaterialTex", 6);
     m_pathTracingShader.setInt("numPlanes", static_cast<int>(m_planes.size()));
+}
+
+void PathTracingRenderer::setToneMappingMode(ToneMappingMode mode)
+{
+    m_toneMappingMode = mode;
+}
+
+void PathTracingRenderer::setToneMappingExposure(float exposure)
+{
+    m_toneMappingExposure = std::clamp(exposure, 0.01f, 20.0f);
+}
+
+void PathTracingRenderer::setActiveCubemap(int cubemapHandle)
+{
+    m_textureLibrary.setActiveCubemap(cubemapHandle);
+}
+
+const std::vector<int> &PathTracingRenderer::getCubemapHandles() const
+{
+    return m_textureLibrary.getCubemapHandles();
+}
+
+const TextureResource *PathTracingRenderer::getTextureResource(int handle) const
+{
+    return m_textureLibrary.getTextureResource(handle);
 }

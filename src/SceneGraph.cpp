@@ -153,7 +153,7 @@ void SceneGraph::renderHierarchyUI(std::vector<Node *> &selectedNodes,
     bool isMultiSelectKeyPressed,
     std::function<bool(Node *)> canAddToSelection)
 {
-    ImGui::Begin("Scene Graph");
+    ImGui::Begin("Hierarchy");
 
     traverse([&](GameObject &obj, int depth) {
         std::string label = std::string(depth * 2, ' ');

@@ -7,20 +7,8 @@
 
 void GeometryImguiWindow::render()
 {
-    ImGui::Begin("Spawn objects");
+    ImGui::Begin("Geometry");
 
-    if (ImGui::CollapsingHeader(
-            "Material Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::ColorEdit3("Color", &m_materialProps.color.x);
-        ImGui::ColorEdit3("Emissive", &m_materialProps.emissive.x);
-        ImGui::SliderFloat(
-            "Percent Specular", &m_materialProps.percentSpecular, 0.0f, 1.0f);
-        ImGui::SliderFloat(
-            "Roughness", &m_materialProps.roughness, 0.0f, 1.0f);
-        ImGui::ColorEdit3("Specular Color", &m_materialProps.specularColor.x);
-    }
-
-    ImGui::Spacing();
     ImGui::Text("Primitives");
 
     ImGui::SeparatorText("Sphere");
@@ -28,8 +16,7 @@ void GeometryImguiWindow::render()
     ImGui::SliderInt("Sectors (vertical slices)", &m_sphereSectors, 3, 64);
     ImGui::SliderInt("Stacks (horizontal slices)", &m_sphereStacks, 2, 32);
     if (ImGui::Button("Spawn Sphere") && onSpawnSphere) {
-        onSpawnSphere(
-            m_sphereRadius, m_sphereSectors, m_sphereStacks, m_materialProps);
+        onSpawnSphere(m_sphereRadius, m_sphereSectors, m_sphereStacks);
         m_sphereCount++;
     }
 
@@ -37,7 +24,7 @@ void GeometryImguiWindow::render()
     ImGui::SeparatorText("Cube");
     ImGui::SliderFloat("Cube Size", &m_cubeSize, 0.1f, 2.0f);
     if (ImGui::Button("Spawn Cube") && onSpawnCube) {
-        onSpawnCube(m_cubeSize, m_materialProps);
+        onSpawnCube(m_cubeSize);
         m_cubeCount++;
     }
 
@@ -47,8 +34,7 @@ void GeometryImguiWindow::render()
     ImGui::SliderFloat("Height", &m_cylinderHeight, 0.1f, 5.0f);
     ImGui::SliderInt("Cylinder Sectors", &m_cylinderSectors, 3, 64);
     if (ImGui::Button("Spawn Cylinder") && onSpawnCylinder) {
-        onSpawnCylinder(m_cylinderRadius, m_cylinderHeight, m_cylinderSectors,
-            m_materialProps);
+        onSpawnCylinder(m_cylinderRadius, m_cylinderHeight, m_cylinderSectors);
         m_cylinderCount++;
     }
 
@@ -62,8 +48,7 @@ void GeometryImguiWindow::render()
         if (glm::length(normal) < 0.001f) {
             normal = glm::vec3(0.0f, 1.0f, 0.0f);
         }
-        onSpawnPlane(m_planeWidth, m_planeHeight, glm::normalize(normal),
-            m_materialProps);
+        onSpawnPlane(m_planeWidth, m_planeHeight, glm::normalize(normal));
         m_planeCount++;
     }
 
@@ -71,8 +56,7 @@ void GeometryImguiWindow::render()
     ImGui::SeparatorText("Parametric curve");
     ImGui::SliderInt("Control Point", &m_nbControlPoint, 5, 10);
     if (ImGui::Button("Spawn Parametric Curve") && onSpawnCylinder) {
-        onSpawnCylinder(m_cylinderRadius, m_cylinderHeight, m_cylinderSectors,
-            m_materialProps);
+        onSpawnCylinder(m_cylinderRadius, m_cylinderHeight, m_cylinderSectors);
         m_cylinderCount++;
     }
 

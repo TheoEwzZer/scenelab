@@ -34,6 +34,7 @@ public:
 
     // Transform UI
     void renderTransformUI(bool leftShiftPressed);
+    void renderRayTracingUI();
     void renderCameraGizmo(int cameraId, const Camera &camera, ImVec2 imagePos,
         ImVec2 imageSize, bool isHovered);
 

@@ -109,7 +109,7 @@ void CameraController::handleMouseMovement(double x, double y, bool isRotating)
 
 void CameraController::renderCameraManagerUI()
 {
-    ImGui::Begin("Camera Manager");
+    ImGui::Begin("Camera");
 
     // Create / Destroy
     if (ImGui::Button("Create Camera")) {

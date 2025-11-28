@@ -190,7 +190,7 @@ void UIDrawer::renderUIPrimitive(App *app)
 
 void UIDrawer::renderUI(App *app)
 {
-    ImGui::Begin("Dessin vectoriel");
+    ImGui::Begin("Vector");
     ImGui::Separator();
     ImGui::Text("Primitives");
 
