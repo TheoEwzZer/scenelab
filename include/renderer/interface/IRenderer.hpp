@@ -59,6 +59,10 @@ public:
     virtual void setObjectSpecularColor(int objectId, const glm::vec3 &color)
         = 0;
     virtual glm::vec3 getObjectSpecularColor(int objectId) const = 0;
+    virtual void setObjectIndexOfRefraction(int objectId, float ior) = 0;
+    virtual float getObjectIndexOfRefraction(int objectId) const = 0;
+    virtual void setObjectRefractionChance(int objectId, float chance) = 0;
+    virtual float getObjectRefractionChance(int objectId) const = 0;
 
     // Camera Related
     virtual void setViewMatrix(const glm::mat4 &view) = 0;

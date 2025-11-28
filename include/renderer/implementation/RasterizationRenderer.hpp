@@ -94,6 +94,10 @@ public:
     float getObjectRoughness(int objectId) const override;
     void setObjectSpecularColor(int objectId, const glm::vec3 &color) override;
     glm::vec3 getObjectSpecularColor(int objectId) const override;
+    void setObjectIndexOfRefraction(int objectId, float ior) override;
+    float getObjectIndexOfRefraction(int objectId) const override;
+    void setObjectRefractionChance(int objectId, float chance) override;
+    float getObjectRefractionChance(int objectId) const override;
 
     // Camera Related
     void setViewMatrix(const glm::mat4 &view) override { m_viewMatrix = view; }

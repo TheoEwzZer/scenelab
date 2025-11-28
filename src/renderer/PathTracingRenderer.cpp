@@ -398,6 +398,56 @@ glm::vec3 PathTracingRenderer::getObjectSpecularColor(int objectId) const
     return m_objects[objectId].renderObject->getSpecularColor();
 }
 
+void PathTracingRenderer::setObjectIndexOfRefraction(int objectId, float ior)
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_objects.size())) {
+        return;
+    }
+    if (!m_objects[objectId].renderObject) {
+        return;
+    }
+
+    m_objects[objectId].renderObject->setIndexOfRefraction(ior);
+    m_trianglesDirty = true;
+}
+
+float PathTracingRenderer::getObjectIndexOfRefraction(int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_objects.size())) {
+        return 1.0f;
+    }
+    if (!m_objects[objectId].renderObject) {
+        return 1.0f;
+    }
+
+    return m_objects[objectId].renderObject->getIndexOfRefraction();
+}
+
+void PathTracingRenderer::setObjectRefractionChance(int objectId, float chance)
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_objects.size())) {
+        return;
+    }
+    if (!m_objects[objectId].renderObject) {
+        return;
+    }
+
+    m_objects[objectId].renderObject->setRefractionChance(chance);
+    m_trianglesDirty = true;
+}
+
+float PathTracingRenderer::getObjectRefractionChance(int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_objects.size())) {
+        return 0.0f;
+    }
+    if (!m_objects[objectId].renderObject) {
+        return 0.0f;
+    }
+
+    return m_objects[objectId].renderObject->getRefractionChance();
+}
+
 void PathTracingRenderer::beginFrame()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

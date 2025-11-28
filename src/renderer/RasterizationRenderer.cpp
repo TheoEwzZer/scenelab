@@ -365,6 +365,46 @@ glm::vec3 RasterizationRenderer::getObjectSpecularColor(int objectId) const
     return m_renderObjects[objectId]->getSpecularColor();
 }
 
+void RasterizationRenderer::setObjectIndexOfRefraction(int objectId, float ior)
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size()))
+        return;
+    if (!m_renderObjects[objectId])
+        return;
+
+    m_renderObjects[objectId]->setIndexOfRefraction(ior);
+}
+
+float RasterizationRenderer::getObjectIndexOfRefraction(int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size()))
+        return 1.0f;
+    if (!m_renderObjects[objectId])
+        return 1.0f;
+
+    return m_renderObjects[objectId]->getIndexOfRefraction();
+}
+
+void RasterizationRenderer::setObjectRefractionChance(int objectId, float chance)
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size()))
+        return;
+    if (!m_renderObjects[objectId])
+        return;
+
+    m_renderObjects[objectId]->setRefractionChance(chance);
+}
+
+float RasterizationRenderer::getObjectRefractionChance(int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size()))
+        return 0.0f;
+    if (!m_renderObjects[objectId])
+        return 0.0f;
+
+    return m_renderObjects[objectId]->getRefractionChance();
+}
+
 void RasterizationRenderer::beginFrame()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

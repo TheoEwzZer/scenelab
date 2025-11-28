@@ -289,6 +289,31 @@ void TransformManager::renderTransformUI(bool leftShiftPressed)
                     }
                 }
             }
+
+            // Refraction Chance
+            float refractionChance
+                = m_renderer->getObjectRefractionChance(rendererId);
+            if (ImGui::SliderFloat(
+                    "Refraction Chance", &refractionChance, 0.0f, 1.0f)) {
+                for (auto *node : m_selectedNodes) {
+                    int objId = node->getData().rendererId;
+                    if (objId >= 0) {
+                        m_renderer->setObjectRefractionChance(
+                            objId, refractionChance);
+                    }
+                }
+            }
+
+            // Index of Refraction
+            float ior = m_renderer->getObjectIndexOfRefraction(rendererId);
+            if (ImGui::SliderFloat("Index of Refraction", &ior, 1.0f, 2.5f)) {
+                for (auto *node : m_selectedNodes) {
+                    int objId = node->getData().rendererId;
+                    if (objId >= 0) {
+                        m_renderer->setObjectIndexOfRefraction(objId, ior);
+                    }
+                }
+            }
         } else {
             ImGui::TextDisabled("No renderable object");
         }
