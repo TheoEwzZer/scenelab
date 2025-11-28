@@ -1,4 +1,5 @@
 #include "App.hpp"
+#include "illumination/Illumination.hpp"
 #include "renderer/implementation/PathTracingRenderer.hpp"
 #include "renderer/implementation/RasterizationRenderer.hpp"
 
@@ -35,6 +36,7 @@ App::App() : m_window(1920, 1080, "SceneLab")
     m_cameraController
         = std::make_unique<CameraController>(m_camera, m_renderer);
 
+    illumination_ui = std::make_unique<Illumination::UIIllumination>(*m_transformManager, m_sceneGraph);
     if (auto *rasterRenderer
         = dynamic_cast<RasterizationRenderer *>(m_renderer.get())) {
         m_textureManager = std::make_unique<TextureManager>(
@@ -628,6 +630,9 @@ void App::render()
 
     // Main menu bar
     renderMainMenuBar();
+
+    // Illumination UI
+    illumination_ui->renderUI(this);
 
     // Vector drawing UI
     vectorial_ui.renderUI(this, &m_showVectorWindow);

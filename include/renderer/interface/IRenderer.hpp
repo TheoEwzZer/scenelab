@@ -18,6 +18,7 @@
 #include <imgui.h>
 
 #include "RenderableObject.hpp"
+#include "objects/Material.hpp"
 
 struct ImVec2;
 
@@ -36,6 +37,9 @@ public:
         = 0;
     virtual int registerObject(
         std::unique_ptr<RenderableObject> obj, const glm::vec3 &color)
+        = 0;
+    virtual int registerObject(
+        std::unique_ptr<RenderableObject> obj, const Material &material)
         = 0;
     virtual void updateTransform(int objectId, const glm::mat4 &modelMatrix)
         = 0;

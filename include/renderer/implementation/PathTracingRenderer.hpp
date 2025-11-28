@@ -150,6 +150,8 @@ public:
         const std::string &texturePath) override;
     int registerObject(std::unique_ptr<RenderableObject> obj,
         const glm::vec3 &color) override;
+    int registerObject(std::unique_ptr<RenderableObject> obj,
+        const Material &material) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
 

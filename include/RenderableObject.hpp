@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "ShaderProgram.hpp"
+#include "objects/Material.hpp"
 #include "renderer/TextureLibrary.hpp"
 
 enum class FilterMode : int { None = 0, Grayscale, Sharpen, EdgeDetect, Blur };
@@ -28,7 +29,10 @@ protected:
     int m_textureHandle = -1;
     FilterMode filterMode = FilterMode::None;
 
-    glm::vec3 m_color = glm::vec3(1.0f);
+    // Material for classical illumination (Phong/Blinn-Phong)
+    Material m_mat;
+
+    // Properties for path tracing
     std::vector<float> m_vertices;
     std::vector<unsigned int> m_indices;
 
@@ -60,6 +64,10 @@ public:
         }
     }
 
+    void setMaterial(const Material &mat) {m_mat = mat;};
+
+    Material &getMaterial() {return m_mat;};
+
     void setFilterMode(const FilterMode mode) { filterMode = mode; }
 
     [[nodiscard]] FilterMode getFilterMode() const { return filterMode; }
@@ -81,13 +89,19 @@ public:
 
     void setColor(const glm::vec3 &color)
     {
-        m_color = color;
+        m_mat = Material(m_mat.m_ambientColor, color, m_mat.m_specularColor, m_mat.m_emissiveColor);
         m_useTexture = false;
     }
 
-    [[nodiscard]] glm::vec3 getColor() const { return m_color; }
+    // [[nodiscard]] glm::vec3 getColor() const { return m_color; }
 
-    void setEmissive(const glm::vec3 &emissive) { m_emissive = emissive; }
+    glm::vec3 getColor() const { return m_mat.m_diffuseColor; }
+
+    void setEmissive(const glm::vec3 &emissive)
+    {
+        m_emissive = emissive;
+        m_mat.m_emissiveColor = emissive; // Sync for rasterization
+    }
 
     [[nodiscard]] glm::vec3 getEmissive() const { return m_emissive; }
 

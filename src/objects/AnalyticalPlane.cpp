@@ -5,7 +5,7 @@ AnalyticalPlane::AnalyticalPlane(
     float width, float height, const glm::vec3 &normal, const glm::vec3 &color)
 {
     init(width, height, normal);
-    m_color = color;
+    setColor(color);
 }
 
 void AnalyticalPlane::init(float width, float height, const glm::vec3 &normal)
@@ -54,7 +54,9 @@ void AnalyticalPlane::draw([[maybe_unused]] const ShaderProgram &vectorial,
     const bool useTexture = this->m_useTexture && texture
         && texture->target == TextureTarget::Texture2D;
     lighting.setBool("useTexture", useTexture);
-    lighting.setVec3("objectColor", m_color);
+
+    m_mat.setShaderUniforms(lighting);
+
     lighting.setInt("filterMode", static_cast<int>(filterMode));
     glm::vec2 texelSize = useTexture
         ? glm::vec2(1.0f / static_cast<float>(texture->size.x),

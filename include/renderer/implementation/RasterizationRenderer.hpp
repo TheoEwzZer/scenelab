@@ -1,9 +1,11 @@
 #pragma once
 
 #include "../interface/IRenderer.hpp"
+#include "RenderableObject.hpp"
 #include "Camera.hpp"
 #include "renderer/Window.hpp"
 #include "ShaderProgram.hpp"
+#include "glm/fwd.hpp"
 #include "renderer/TextureLibrary.hpp"
 #include <array>
 #include <glm/glm.hpp>
@@ -15,10 +17,12 @@
 #include <memory>
 
 enum class ToneMappingMode : int { Off = 0, Reinhard, ACES };
+enum LightingModel { LAMBERT = 0, PHONG = 1, BLINN_PHONG = 2, GOURAUD = 3 };
 
 class RasterizationRenderer : public IRenderer {
 private:
     Window &m_window;
+    LightingModel m_lightingModel = LAMBERT;
 
     glm::mat4 m_viewMatrix { 1.0f };
     glm::mat4 m_projMatrix { 1.0f };
@@ -28,7 +32,7 @@ private:
 
     ShaderProgram m_lightingShader;
     ShaderProgram m_vectorialShader;
-    ShaderProgram m_pointLightShader;
+    ShaderProgram m_gouraudLightingShader;
     ShaderProgram m_bboxShader;
     ShaderProgram m_skyboxShader;
 
@@ -63,6 +67,8 @@ public:
         "Grayscale", "Sharpen", "Edge Detect", "Blur" };
     static constexpr std::array<const char *, 3> TONEMAP_LABELS { "Off",
         "Reinhard", "ACES" };
+    static constexpr glm::vec3 DEFAULT_AMBIENT_LIGHT_COLOR {0.1f,0.1f, 0.1f};
+
 
     explicit RasterizationRenderer(Window &window);
     virtual ~RasterizationRenderer() override;
@@ -76,10 +82,12 @@ public:
         const std::string &texturePath) override;
     int registerObject(std::unique_ptr<RenderableObject> obj,
         const glm::vec3 &color) override;
+    int registerObject(std::unique_ptr<RenderableObject> obj, const Material &material) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
     void removeObject(int objectId) override;
     void drawBoundingBox(int objectId, const glm::vec3 &corner1,
         const glm::vec3 &corner2) override;
+    RenderableObject &getRenderable(int objectId) const;
     std::vector<std::unique_ptr<RenderableObject>>
     extractAllObjects() override;
 
@@ -147,6 +155,7 @@ public:
         bool srgb = false);
     void assignTextureToObject(int objectId, int textureHandle) const;
     void assignTextureToObject(int objectId, const std::string &texturePath);
+    void assignMaterialToObject(const int objectId, Material &mat) const;
     int getObjectTextureHandle(int objectId) const;
     void setObjectFilter(int objectId, FilterMode mode) const;
     FilterMode getObjectFilter(int objectId) const;
@@ -178,4 +187,9 @@ public:
     }
 
     const std::vector<int> &getCubemapHandles() const;
+
+    void setLightingModel(LightingModel model) { m_lightingModel = model; }
+    LightingModel getLightingModel() const { return m_lightingModel; }
+
+    glm::vec3 m_ambientLightColor;
 };

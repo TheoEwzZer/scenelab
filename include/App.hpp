@@ -21,6 +21,7 @@
 #include "CameraController.hpp"
 #include "Vectoriel.hpp"
 #include "Image.hpp"
+#include "illumination/Illumination.hpp"
 #include "renderer/interface/IRenderer.hpp"
 #include "renderer/Window.hpp"
 #include "TextureManager.hpp"
@@ -64,6 +65,7 @@ private:
     void resetScene();
 
     Vect::UIDrawer vectorial_ui;
+    std::unique_ptr<Illumination::UIIllumination> illumination_ui;
 
 public:
     explicit App();

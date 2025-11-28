@@ -217,6 +217,13 @@ int PathTracingRenderer::registerObject(
     return objectId;
 }
 
+int PathTracingRenderer::registerObject(
+    std::unique_ptr<RenderableObject> obj, const Material &material)
+{
+    obj->setMaterial(material);
+    return registerObject(std::move(obj), material.m_diffuseColor);
+}
+
 void PathTracingRenderer::updateTransform(
     const int objectId, const glm::mat4 &modelMatrix)
 {

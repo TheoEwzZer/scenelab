@@ -18,4 +18,5 @@ void main()
     TexCoord = aTexCoord;
 
     Normal = mat3(transpose(inverse(model))) * aNormal;
+    Normal = normalize(Normal);
 }

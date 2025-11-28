@@ -3,12 +3,13 @@
 //
 
 #include "../../include/objects/Object3D.hpp"
+#include "objects/Material.hpp"
 
 Object3D::Object3D(const std::vector<float> &vertices,
     const std::vector<unsigned int> &indices, const glm::vec3 &color)
 {
     init(vertices, indices);
-    m_color = color;
+    setColor(color);
 }
 
 Object3D::Object3D(const std::vector<float> &vertices,
@@ -73,7 +74,10 @@ void Object3D::draw([[maybe_unused]] const ShaderProgram &vectorial,
     const bool useTexture = this->m_useTexture && texture
         && texture->target == TextureTarget::Texture2D;
     lighting.setBool("useTexture", useTexture);
-    lighting.setVec3("objectColor", m_color);
+
+    m_mat.setShaderUniforms(lighting);
+
+    // lighting.setVec3("objectColor", m_color);
     lighting.setInt("filterMode", static_cast<int>(filterMode));
     glm::vec2 texelSize = useTexture
         ? glm::vec2(1.0f / static_cast<float>(texture->size.x),

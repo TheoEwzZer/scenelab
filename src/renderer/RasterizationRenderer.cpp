@@ -5,7 +5,9 @@
 #include "backends/imgui_impl_opengl3.h"
 
 #include "ImGuizmo.h"
+#include "glm/fwd.hpp"
 #include "imgui.h"
+#include "objects/Material.hpp"
 #include "renderer/interface/IRenderer.hpp"
 
 #include <algorithm>
@@ -13,17 +15,17 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include "objects/Light.hpp"
 
-namespace {
-constexpr glm::vec3 DEFAULT_LIGHT_COLOR { 1.0f, 1.0f, 1.0f };
-constexpr glm::vec3 DEFAULT_LIGHT_POS { 2.0f, 0.0f, 0.0f };
-}
 
-RasterizationRenderer::RasterizationRenderer(Window &window) : m_window(window)
+RasterizationRenderer::RasterizationRenderer(Window &window)
+    : m_window(window)
+    , m_ambientLightColor(DEFAULT_AMBIENT_LIGHT_COLOR)
 {
 
     glEnable(GL_DEPTH_TEST);
@@ -31,31 +33,28 @@ RasterizationRenderer::RasterizationRenderer(Window &window) : m_window(window)
 
     m_lightingShader.init(
         "../assets/shaders/shader.vert", "../assets/shaders/lighting.frag");
-    m_lightingShader.use();
-    m_lightingShader.setVec3("lightColor", DEFAULT_LIGHT_COLOR);
-    m_lightingShader.setVec3("lightPos", DEFAULT_LIGHT_POS);
-    m_lightingShader.setInt("ourTexture", 0);
-    m_lightingShader.setInt("filterMode", 0);
-    m_lightingShader.setVec2("texelSize", glm::vec2(1.0f));
-    m_lightingShader.setInt(
-        "toneMappingMode", static_cast<int>(m_toneMappingMode));
-    m_lightingShader.setFloat("toneExposure", m_toneMappingExposure);
-
-    m_pointLightShader.init(
-        "../assets/shaders/shader.vert", "../assets/shaders/pointLight.frag");
+    m_gouraudLightingShader.init(
+        "../assets/shaders/lighting_gouraud.vert", "../assets/shaders/lighting_gouraud.frag");
     m_vectorialShader.init(
         "../assets/shaders/shader_vect.vert", "../assets/shaders/vect.frag");
-    m_vectorialShader.use();
-    m_vectorialShader.setInt("ourTexture", 0);
-    m_vectorialShader.setBool("useTexture", false);
-    m_vectorialShader.setInt("filterMode", 0);
-    m_vectorialShader.setVec2("texelSize", glm::vec2(0.0f));
     m_bboxShader.init(
         "../assets/shaders/shader.vert", "../assets/shaders/bbox.frag");
     m_skyboxShader.init(
         "../assets/shaders/skybox.vert", "../assets/shaders/skybox.frag");
+
+    for (auto &shader: {m_vectorialShader, m_lightingShader, m_gouraudLightingShader}) {
+        shader.use();
+        shader.setVec3("ambientLightColor", m_ambientLightColor);
+        shader.setInt("ourTexture", 0);
+        shader.setInt("filterMode", 0);
+        shader.setVec2("texelSize", glm::vec2(1.0f));
+        shader.setInt(
+            "toneMappingMode", static_cast<int>(m_toneMappingMode));
+        shader.setFloat("toneExposure", m_toneMappingExposure);
+    }
     m_skyboxShader.use();
     m_skyboxShader.setInt("skybox", 0);
+    m_lightingShader.use();
 
     // Initialize view and projection matrices
     m_viewMatrix = glm::mat4(1.0f);
@@ -217,6 +216,22 @@ int RasterizationRenderer::registerObject(std::unique_ptr<RenderableObject> obj,
     int id;
 
     obj->setColor(color);
+    if (!m_freeSlots.empty()) {
+        id = m_freeSlots.back();
+        m_freeSlots.pop_back();
+        m_renderObjects[id] = std::move(obj);
+    } else {
+        id = m_renderObjects.size();
+        m_renderObjects.push_back(std::move(obj));
+    }
+    return id;
+}
+
+int RasterizationRenderer::registerObject(std::unique_ptr<RenderableObject> obj, const Material &material)
+{
+    int id;
+
+    obj->setMaterial(material);
     if (!m_freeSlots.empty()) {
         id = m_freeSlots.back();
         m_freeSlots.pop_back();
@@ -417,22 +432,32 @@ void RasterizationRenderer::beginFrame()
     m_vectorialShader.setMat4("view", m_viewMatrix);
     m_vectorialShader.setMat4("projection", m_projMatrix);
 
-    m_lightingShader.use();
-    m_lightingShader.setMat4("view", m_viewMatrix);
-    m_lightingShader.setMat4("projection", m_projMatrix);
-    m_lightingShader.setVec3("lightColor", DEFAULT_LIGHT_COLOR);
-    m_lightingShader.setInt(
-        "toneMappingMode", static_cast<int>(m_toneMappingMode));
-    m_lightingShader.setFloat("toneExposure", m_toneMappingExposure);
+    auto &lshader = this->m_lightingModel != GOURAUD ? m_lightingShader : m_gouraudLightingShader;
 
+    lshader.use();
+    lshader.setMat4("view", m_viewMatrix);
+    lshader.setMat4("projection", m_projMatrix);
+    lshader.setInt("lightingModel", m_lightingModel);
+    lshader.setInt(
+        "toneMappingMode", static_cast<int>(m_toneMappingMode));
+    lshader.setFloat("toneExposure", m_toneMappingExposure);
+
+    std::vector<int> lightsNumbers(Light::Type::TypeEnd);
     for (const auto &obj : m_renderObjects) {
-        if (obj)
-            obj->useShader(m_lightingShader);
+        if (obj) {
+            const Light *l = dynamic_cast<Light*>(obj.get());
+            if (l != nullptr) {
+                l->setUniforms(lightsNumbers[l->getType()], lshader);
+                lightsNumbers[l->getType()] += 1;
+            }
+
+            obj->useShader(lshader);
+        }
     }
 
-    m_pointLightShader.use();
-    m_pointLightShader.setMat4("view", m_viewMatrix);
-    m_pointLightShader.setMat4("projection", m_projMatrix);
+    lshader.setInt("NB_DIR_LIGHTS", lightsNumbers[Light::Type::Directional]);
+    lshader.setInt("NB_POINT_LIGHTS", lightsNumbers[Light::Type::Point]);
+    lshader.setInt("NB_SPOT_LIGHTS", lightsNumbers[Light::Type::Spot]);
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -503,7 +528,7 @@ void RasterizationRenderer::drawSkybox() const
     glDepthFunc(GL_LESS);
 }
 
-void RasterizationRenderer::drawAll(Camera)
+void RasterizationRenderer::drawAll(Camera cam)
 {
     drawSkybox();
 
@@ -511,17 +536,35 @@ void RasterizationRenderer::drawAll(Camera)
     m_vectorialShader.setMat4("view", m_viewMatrix);
     m_vectorialShader.setMat4("projection", m_projMatrix);
 
-    m_lightingShader.use();
-    m_lightingShader.setMat4("view", m_viewMatrix);
-    m_lightingShader.setMat4("projection", m_projMatrix);
+    auto &lshader = this->m_lightingModel != GOURAUD ? m_lightingShader : m_gouraudLightingShader;
 
-    m_pointLightShader.use();
-    m_pointLightShader.setMat4("view", m_viewMatrix);
-    m_pointLightShader.setMat4("projection", m_projMatrix);
+    lshader.use();
+    lshader.setMat4("view", m_viewMatrix);
+    lshader.setMat4("projection", m_projMatrix);
+    lshader.setInt("lightingModel", m_lightingModel);
+    lshader.setInt("toneMappingMode", static_cast<int>(m_toneMappingMode));
+    lshader.setFloat("toneExposure", m_toneMappingExposure);
+    lshader.setVec3("viewPosition", cam.getPosition());
+    lshader.setVec3("ambientLightColor", m_ambientLightColor);
+
+    // Configure light uniforms
+    std::vector<int> lightsNumbers(Light::Type::TypeEnd, 0);
+    for (const auto &obj : m_renderObjects) {
+        if (obj) {
+            const Light *l = dynamic_cast<Light*>(obj.get());
+            if (l != nullptr) {
+                l->setUniforms(lightsNumbers[l->getType()], lshader);
+                lightsNumbers[l->getType()] += 1;
+            }
+        }
+    }
+    lshader.setInt("NB_DIR_LIGHTS", lightsNumbers[Light::Type::Directional]);
+    lshader.setInt("NB_POINT_LIGHTS", lightsNumbers[Light::Type::Point]);
+    lshader.setInt("NB_SPOT_LIGHTS", lightsNumbers[Light::Type::Spot]);
 
     for (const auto &obj : m_renderObjects)
         if (obj && obj->getStatus()) {
-            obj->draw(m_vectorialShader, m_pointLightShader, m_lightingShader, m_textureLibrary);
+            obj->draw(m_vectorialShader, lshader, lshader, m_textureLibrary);
 
             if (const GLenum error = glGetError(); error != GL_NO_ERROR) {
                 std::cerr << "[WARN] OpenGL error after drawing object "
@@ -624,6 +667,29 @@ void RasterizationRenderer::assignTextureToObject(
         obj->assignTexture(res ? textureHandle : -1);
     }
 }
+
+RenderableObject &RasterizationRenderer::getRenderable(int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        throw std::invalid_argument("getRendrable: invalid ObjectID");
+    }
+    if (auto &obj = m_renderObjects[objectId]) {
+        return (*obj);
+    }
+    throw std::invalid_argument("getRendrable: invalid ObjectID");
+}
+
+void RasterizationRenderer::assignMaterialToObject(
+    const int objectId, Material &mat) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        return;
+    }
+    if (auto &obj = m_renderObjects[objectId]) {
+        obj->setMaterial(mat);
+    }
+}
+
 
 void RasterizationRenderer::assignTextureToObject(
     const int objectId, const std::string &texturePath)
