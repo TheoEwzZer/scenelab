@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <string>
 
-Light::Light(const std::vector<float> &vertices,
+Light::Light(const std::vector<Vertex> &vertices,
     const std::vector<unsigned int> &indices, const glm::vec3 &color)
 {
     init(vertices, indices);
@@ -18,7 +18,7 @@ Light::Light(const std::vector<float> &vertices,
     updateEmissive();
 }
 
-Light::Light(const std::vector<float> &vertices,
+Light::Light(const std::vector<Vertex> &vertices,
     const std::vector<unsigned int> &indices, const int textureHandle)
 {
     init(vertices, indices);
@@ -26,11 +26,27 @@ Light::Light(const std::vector<float> &vertices,
     updateEmissive();
 }
 
-void Light::init(const std::vector<float> &vertices,
+void Light::init(const std::vector<Vertex> &vertices,
     const std::vector<unsigned int> &indices)
 {
-    // Store vertices for path tracing
-    m_vertices = vertices;
+    // Convert Vertex data to float array for path tracing
+    m_vertices.reserve(vertices.size() * 14);
+    for (const auto &v : vertices) {
+        m_vertices.push_back(v.position.x);
+        m_vertices.push_back(v.position.y);
+        m_vertices.push_back(v.position.z);
+        m_vertices.push_back(v.texCoord.x);
+        m_vertices.push_back(v.texCoord.y);
+        m_vertices.push_back(v.normal.x);
+        m_vertices.push_back(v.normal.y);
+        m_vertices.push_back(v.normal.z);
+        m_vertices.push_back(v.tangent.x);
+        m_vertices.push_back(v.tangent.y);
+        m_vertices.push_back(v.tangent.z);
+        m_vertices.push_back(v.bitangent.x);
+        m_vertices.push_back(v.bitangent.y);
+        m_vertices.push_back(v.bitangent.z);
+    }
     m_indices = indices;
 
     glGenVertexArrays(1, &VAO);
@@ -40,7 +56,7 @@ void Light::init(const std::vector<float> &vertices,
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     useIndices = !indices.empty();
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
         vertices.data(), GL_STATIC_DRAW);
 
     if (useIndices) {
@@ -52,18 +68,24 @@ void Light::init(const std::vector<float> &vertices,
         indexCount = static_cast<unsigned int>(indices.size());
         useIndices = true;
     } else {
-        indexCount = static_cast<unsigned int>(vertices.size() / 8);
+        indexCount = static_cast<unsigned int>(vertices.size());
     }
 
-    glVertexAttribPointer(
-        0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-        (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-        (void *)(5 * sizeof(float)));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, normal));
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, tangent));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, bitangent));
+    glEnableVertexAttribArray(4);
     glBindVertexArray(0);
 
     isActive = true;
@@ -138,7 +160,7 @@ void Light::setUniforms(
     std::string uniformName;
 
     glm::vec4 worldDir = modelMatrix * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
-    ;
+
     glm::vec3 dir = glm::normalize(glm::vec3(worldDir));
 
     switch (m_type) {

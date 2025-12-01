@@ -12,9 +12,9 @@ class Light : public RenderableObject {
 public:
     enum Type { Directional, Point, Spot, TypeEnd };
 
-    Light(const std::vector<float> &vertices,
+    Light(const std::vector<Vertex> &vertices,
         const std::vector<unsigned int> &indices, int textureHandle = -1);
-    Light(const std::vector<float> &vertices,
+    Light(const std::vector<Vertex> &vertices,
         const std::vector<unsigned int> &indices, const glm::vec3 &color);
 
     void useShader(ShaderProgram &shader) const override;
@@ -40,7 +40,7 @@ public:
     float getIntensity() const { return m_intensity; }
 
 protected:
-    void init(const std::vector<float> &vertices,
+    void init(const std::vector<Vertex> &vertices,
         const std::vector<unsigned int> &indices);
     void updateEmissive(); // Sync emissive with color * intensity
 

@@ -105,6 +105,8 @@ public:
     int registerObject(std::unique_ptr<RenderableObject> obj,
         const Material &material) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
+    void updateGeometry(
+        int objectId, const std::vector<float> &vertices) override;
     void removeObject(int objectId) override;
     void drawBoundingBox(int objectId, const glm::vec3 &corner1,
         const glm::vec3 &corner2) override;
@@ -172,6 +174,7 @@ public:
     void setBoundingBoxDrawCallback(BoundingBoxDrawCallback callback) override;
 
     int loadTexture2D(const std::string &filepath, bool srgb = false);
+    int loadNormalMap(const std::string &filepath);
     int createCheckerboardTexture(const std::string &name, int width,
         int height, const glm::vec3 &colorA, const glm::vec3 &colorB,
         int checks = 8, bool srgb = false);
@@ -182,15 +185,22 @@ public:
         bool srgb = false);
     void assignTextureToObject(int objectId, int textureHandle) const;
     void assignTextureToObject(int objectId, const std::string &texturePath);
+    void assignNormalMapToObject(int objectId, int normalMapHandle) const;
+    void assignNormalMapToObject(int objectId, const std::string &texturePath);
     void assignMaterialToObject(const int objectId, Material &mat) const;
     int getObjectTextureHandle(int objectId) const;
+    int getObjectNormalMapHandle(int objectId) const;
     void setObjectFilter(int objectId, FilterMode mode) const;
     FilterMode getObjectFilter(int objectId) const;
     void setObjectUseTexture(int objectId, bool useTexture) const;
     bool getObjectUseTexture(int objectId) const;
+    void setObjectUseNormalMap(int objectId, bool useNormalMap) const;
+    bool getObjectUseNormalMap(int objectId) const;
     const TextureResource *getTextureResource(int handle) const;
+    const NormalMapResource *getNormalMapResource(int handle) const;
 
     const std::vector<TextureResource> &getTextureResources() const;
+    const std::vector<NormalMapResource> &getNormalMapResources() const;
 
     void setToneMappingMode(ToneMappingMode mode);
 

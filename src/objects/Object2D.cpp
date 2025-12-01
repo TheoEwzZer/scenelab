@@ -107,6 +107,8 @@ void Object2D::init(const std::vector<float> &vertices,
     isActive = true;
 }
 
+void Object2D::setDrawMode(const GLenum mode) { m_drawMode = mode; }
+
 void Object2D::draw(const ShaderProgram &vectorial,
     [[maybe_unused]] const ShaderProgram &pointLight,
     [[maybe_unused]] const ShaderProgram &lighting,
@@ -141,9 +143,9 @@ void Object2D::draw(const ShaderProgram &vectorial,
 
     glBindVertexArray(VAO);
     if (!useIndices) {
-        glDrawArrays(GL_TRIANGLES, 0, indexCount);
+        glDrawArrays(m_drawMode, 0, indexCount);
     } else {
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+        glDrawElements(m_drawMode, indexCount, GL_UNSIGNED_INT, 0);
     }
     glBindVertexArray(0);
     glDisable(GL_BLEND);

@@ -12,12 +12,15 @@ public:
     Object2D(const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices, int textureHandle = -1);
 
+    void setDrawMode(GLenum mode);
+
     void draw(const ShaderProgram &vectorial,
         [[maybe_unused]] const ShaderProgram &pointLight,
         [[maybe_unused]] const ShaderProgram &lighting,
         const TextureLibrary &textures) const override;
 
 private:
+    GLenum m_drawMode = GL_TRIANGLES;
     void init(const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices);
 };

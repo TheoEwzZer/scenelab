@@ -62,9 +62,20 @@ void GeometryImguiWindow::render(bool *p_open)
     ImGui::Spacing();
     ImGui::SeparatorText("Parametric curve");
     ImGui::SliderInt("Control Point", &m_nbControlPoint, 5, 10);
-    if (ImGui::Button("Spawn Parametric Curve") && onSpawnCylinder) {
-        onSpawnCylinder(m_cylinderRadius, m_cylinderHeight, m_cylinderSectors);
-        m_cylinderCount++;
+    if (ImGui::Button("Spawn curve") && onSpawnParametricCurve) {
+        onSpawnParametricCurve(m_nbControlPoint);
+        m_curveCount++;
+    }
+
+    ImGui::Spacing();
+    ImGui::SeparatorText("Triangles mesh");
+    if (ImGui::Button("ajouter point") && onAddPoint) {
+        onAddPoint();
+        m_sphereCount++;
+    }
+    if (ImGui::Button("Générer maillage triangulaire") && onGenerateMesh) {
+        onGenerateMesh();
+        m_meshCount++;
     }
 
     ImGui::NewLine();

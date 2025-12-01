@@ -20,6 +20,14 @@ struct TextureResource {
     std::string sourcePath;
 };
 
+struct NormalMapResource {
+    int handle = -1;
+    unsigned int id = 0;
+    glm::ivec2 size { 1, 1 };
+    std::string name;
+    std::string sourcePath;
+};
+
 class TextureLibrary {
 public:
     TextureLibrary();
@@ -29,6 +37,7 @@ public:
     TextureLibrary &operator=(const TextureLibrary &) = delete;
 
     int loadTexture2D(const std::string &filepath, bool srgb = false);
+    int loadNormalMap(const std::string &filepath);
     int createCheckerboardTexture(const std::string &name, int width,
         int height, const glm::vec3 &colorA, const glm::vec3 &colorB,
         int checks = 8, bool srgb = false);
@@ -54,6 +63,13 @@ public:
         return m_texturePool;
     }
 
+    const NormalMapResource *getNormalMapResource(int handle) const;
+
+    const std::vector<NormalMapResource> &getNormalMapResources() const
+    {
+        return m_normalMapPool;
+    }
+
     const std::vector<int> &getCubemapHandles() const
     {
         return m_cubemapHandles;
@@ -65,6 +81,7 @@ public:
 
 private:
     int storeTextureResource(TextureResource &&resource);
+    int storeNormalMapResource(NormalMapResource &&resource);
     int loadTextureInternal(const std::string &filepath, bool srgb);
     int createProceduralTexture(const std::string &name, int width, int height,
         const std::vector<unsigned char> &data, bool srgb = false);
@@ -73,7 +90,9 @@ private:
         bool srgb = false);
 
     std::vector<TextureResource> m_texturePool;
+    std::vector<NormalMapResource> m_normalMapPool;
     std::unordered_map<std::string, int> m_textureHandleByPath;
+    std::unordered_map<std::string, int> m_normalMapHandleByPath;
     std::vector<int> m_cubemapHandles;
     int m_activeCubemap = -1;
 };

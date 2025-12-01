@@ -46,6 +46,59 @@ int TextureLibrary::loadTexture2D(const std::string &filepath, bool srgb)
     return loadTextureInternal(filepath, srgb);
 }
 
+int TextureLibrary::loadNormalMap(const std::string &filepath)
+{
+    if (filepath.empty()) {
+        return -1;
+    }
+
+    if (const auto it = m_normalMapHandleByPath.find(filepath);
+        it != m_normalMapHandleByPath.end()) {
+        return it->second;
+    }
+
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *data
+        = stbi_load(filepath.c_str(), &width, &height, &channels, 0);
+
+    if (!data || width <= 0 || height <= 0 || channels == 0) {
+        std::cerr << "[ERROR] Failed to load texture: " << filepath << '\n';
+        if (data) {
+            stbi_image_free(data);
+        }
+        return -1;
+    }
+
+    unsigned int mapId = 0;
+    glGenTextures(1, &mapId);
+    glBindTexture(GL_TEXTURE_2D, mapId);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(
+        GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB,
+        GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(data);
+
+    NormalMapResource res;
+    res.id = mapId;
+    res.size = { width, height };
+    res.name = filepath;
+    res.sourcePath = filepath;
+
+    const int handle = storeNormalMapResource(std::move(res));
+    if (handle >= 0) {
+        m_normalMapHandleByPath[filepath] = handle;
+    }
+    return handle;
+}
+
 int TextureLibrary::createCheckerboardTexture(const std::string &name,
     int width, int height, const glm::vec3 &colorA, const glm::vec3 &colorB,
     int checks, bool srgb)
@@ -312,6 +365,14 @@ const TextureResource *TextureLibrary::getTextureResource(int handle) const
     return &m_texturePool[handle];
 }
 
+const NormalMapResource *TextureLibrary::getNormalMapResource(int handle) const
+{
+    if (handle < 0 || handle >= static_cast<int>(m_normalMapPool.size())) {
+        return nullptr;
+    }
+    return &m_normalMapPool[handle];
+}
+
 void TextureLibrary::setActiveCubemap(int cubemapHandle)
 {
     const TextureResource *res = getTextureResource(cubemapHandle);
@@ -329,6 +390,16 @@ int TextureLibrary::storeTextureResource(TextureResource &&resource)
     resource.handle = static_cast<int>(m_texturePool.size());
     m_texturePool.push_back(std::move(resource));
     return m_texturePool.back().handle;
+}
+
+int TextureLibrary::storeNormalMapResource(NormalMapResource &&resource)
+{
+    if (resource.id == 0) {
+        return -1;
+    }
+    resource.handle = static_cast<int>(m_normalMapPool.size());
+    m_normalMapPool.push_back(std::move(resource));
+    return m_normalMapPool.back().handle;
 }
 
 int TextureLibrary::loadTextureInternal(const std::string &filepath, bool srgb)

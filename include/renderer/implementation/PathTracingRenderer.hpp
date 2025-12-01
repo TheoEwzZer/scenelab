@@ -153,6 +153,8 @@ public:
     int registerObject(std::unique_ptr<RenderableObject> obj,
         const Material &material) override;
     void updateTransform(int objectId, const glm::mat4 &modelMatrix) override;
+    void updateGeometry(
+        int objectId, const std::vector<float> &vertices) override;
     void removeObject(int objectId) override;
 
     void drawBoundingBox(int, const glm::vec3 &, const glm::vec3 &) override {}

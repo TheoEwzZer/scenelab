@@ -25,6 +25,8 @@
 #include "renderer/interface/IRenderer.hpp"
 #include "renderer/Window.hpp"
 #include "TextureManager.hpp"
+#include "shapes/ParametricCurve.hpp"
+#include "DynamicGeometryManager.hpp"
 #include "imgui.h"
 
 class RasterizationRenderer;
@@ -52,10 +54,12 @@ private:
     CameraManager m_camera;
 
     // Feature managers
+    std::unique_ptr<DynamicGeometryManager> m_parametricCurveManager;
     std::unique_ptr<GeometryManager> m_geometryManager;
     std::unique_ptr<TransformManager> m_transformManager;
     std::unique_ptr<CameraController> m_cameraController;
     std::unique_ptr<TextureManager> m_textureManager;
+    // std::vector
 
     void init();
     void update();

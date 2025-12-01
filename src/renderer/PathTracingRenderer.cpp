@@ -240,6 +240,19 @@ void PathTracingRenderer::updateTransform(
     m_trianglesDirty = true;
 }
 
+void PathTracingRenderer::updateGeometry(
+    int objectId, const std::vector<float> &vertices)
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_objects.size())) {
+        return;
+    }
+
+    if (m_objects[objectId].renderObject) {
+        m_objects[objectId].renderObject->updateGeometry(vertices);
+        m_trianglesDirty = true;
+    }
+}
+
 void PathTracingRenderer::removeObject(const int objectId)
 {
     if (objectId < 0 || objectId >= static_cast<int>(m_objects.size())) {

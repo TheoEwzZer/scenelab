@@ -73,8 +73,8 @@ public:
     }
 
     void startFrameExport(
-        std::function<void(bool success, const std::string &message)>
-            callback);
+        const std::function<void(bool success, const std::string &message)>
+            &callback);
 
     void updateMessageTimer(float deltaTime);
 

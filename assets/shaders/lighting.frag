@@ -46,10 +46,12 @@ out vec4 FragColor;
 in vec2 TexCoord;
 in vec3 Normal;
 in vec3 FragPos;
+in mat3 TBN;
 
 uniform sampler2D ourTexture;
+uniform sampler2D normalMap;
 uniform bool useTexture;
-
+uniform bool useNormalMap;
 uniform int filterMode;
 uniform vec2 texelSize;
 uniform int toneMappingMode;
@@ -262,7 +264,7 @@ void main()
         totalLight += calculateLight(normal, LOutput, diffuseTextureColor);
     }
 
-    vec3 shaded = ambient + emissive + totalLight;
+vec3 shaded = ambient + emissive + totalLight;
 
     vec3 toneMapped = applyToneMapping(shaded);
     vec3 finalColor = (toneMappingMode == 0) ? shaded : toneMapped;

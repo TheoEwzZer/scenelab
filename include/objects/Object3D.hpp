@@ -9,9 +9,9 @@
 
 class Object3D : public RenderableObject {
 public:
-    Object3D(const std::vector<float> &vertices,
+    Object3D(const std::vector<Vertex> &vertices,
         const std::vector<unsigned int> &indices, int textureHandle = -1);
-    Object3D(const std::vector<float> &vertices,
+    Object3D(const std::vector<Vertex> &vertices,
         const std::vector<unsigned int> &indices, const glm::vec3 &color);
 
     void draw([[maybe_unused]] const ShaderProgram &vectorial,
@@ -20,7 +20,7 @@ public:
         const TextureLibrary &textures) const override;
 
 private:
-    void init(const std::vector<float> &vertices,
+    void init(const std::vector<Vertex> &vertices,
         const std::vector<unsigned int> &indices);
 };
 

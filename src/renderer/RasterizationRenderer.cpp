@@ -33,6 +33,14 @@ RasterizationRenderer::RasterizationRenderer(Window &window) :
         "../assets/shaders/shader.vert", "../assets/shaders/lighting.frag");
     m_gouraudLightingShader.init("../assets/shaders/lighting_gouraud.vert",
         "../assets/shaders/lighting_gouraud.frag");
+    m_lightingShader.use();
+    m_lightingShader.setInt("ourTexture", 0);
+    m_lightingShader.setInt("normalMap", 1);
+    m_lightingShader.setInt("filterMode", 0);
+    m_lightingShader.setVec2("texelSize", glm::vec2(1.0f));
+    m_lightingShader.setInt(
+        "toneMappingMode", static_cast<int>(m_toneMappingMode));
+    m_lightingShader.setFloat("toneExposure", m_toneMappingExposure);
     m_vectorialShader.init(
         "../assets/shaders/shader_vect.vert", "../assets/shaders/vect.frag");
     m_bboxShader.init(
@@ -137,6 +145,12 @@ RasterizationRenderer::getTextureResources() const
     return m_textureLibrary.getTextureResources();
 }
 
+const std::vector<NormalMapResource> &
+RasterizationRenderer::getNormalMapResources() const
+{
+    return m_textureLibrary.getNormalMapResources();
+}
+
 const std::vector<int> &RasterizationRenderer::getCubemapHandles() const
 {
     return m_textureLibrary.getCubemapHandles();
@@ -148,10 +162,20 @@ const TextureResource *RasterizationRenderer::getTextureResource(
     return m_textureLibrary.getTextureResource(handle);
 }
 
+const NormalMapResource *RasterizationRenderer::getNormalMapResource(
+    int handle) const
+{
+    return m_textureLibrary.getNormalMapResource(handle);
+}
+
 int RasterizationRenderer::loadTexture2D(
     const std::string &filepath, bool srgb)
 {
     return m_textureLibrary.loadTexture2D(filepath, srgb);
+}
+
+int RasterizationRenderer::loadNormalMap(const std::string &filepath){
+    return m_textureLibrary.loadNormalMap(filepath);
 }
 
 int RasterizationRenderer::createCheckerboardTexture(const std::string &name,
@@ -261,6 +285,12 @@ void RasterizationRenderer::updateTransform(
 {
     if (objectId >= 0 && objectId < static_cast<int>(m_renderObjects.size())) {
         m_renderObjects[objectId]->setModelMatrix(modelMatrix);
+    }
+}
+
+void RasterizationRenderer::updateGeometry(int objectId, const std::vector<float> &vertices){
+    if (objectId >= 0 && objectId < static_cast<int>(m_renderObjects.size())) {
+        m_renderObjects[objectId]->updateGeometry(vertices);
     }
 }
 
@@ -795,6 +825,32 @@ void RasterizationRenderer::assignTextureToObject(
     }
 }
 
+void RasterizationRenderer::assignNormalMapToObject(
+    const int objectId, const int normalMapHandle) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        return;
+    }
+    if (auto &obj = m_renderObjects[objectId]) {
+        const NormalMapResource *res = getNormalMapResource(normalMapHandle);
+        obj->assignNormalMap(res ? normalMapHandle : -1);
+    }
+}
+
+void RasterizationRenderer::assignNormalMapToObject(
+    const int objectId, const std::string &texturePath)
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        return;
+    }
+    if (const auto &obj = m_renderObjects[objectId]) {
+        const int textureHandle = texturePath.empty()
+            ? -1
+            : m_textureLibrary.loadTexture2D(texturePath, true);
+        obj->assignTexture(textureHandle);
+    }
+}
+
 int RasterizationRenderer::getObjectTextureHandle(const int objectId) const
 {
     if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
@@ -802,6 +858,17 @@ int RasterizationRenderer::getObjectTextureHandle(const int objectId) const
     }
     if (auto &obj = m_renderObjects[objectId]) {
         return obj->getTextureHandle();
+    }
+    return -1;
+}
+
+int RasterizationRenderer::getObjectNormalMapHandle(const int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        return -1;
+    }
+    if (auto &obj = m_renderObjects[objectId]) {
+        return obj->getNormalMapHandle();
     }
     return -1;
 }
@@ -846,6 +913,28 @@ bool RasterizationRenderer::getObjectUseTexture(const int objectId) const
     }
     if (auto &obj = m_renderObjects[objectId]) {
         return obj->isUsingTexture();
+    }
+    return false;
+}
+
+void RasterizationRenderer::setObjectUseNormalMap(
+    const int objectId, const bool useNormalMap) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        return;
+    }
+    if (auto &obj = m_renderObjects[objectId]) {
+        obj->setUseNormalMap(useNormalMap);
+    }
+}
+
+bool RasterizationRenderer::getObjectUseNormalMap(const int objectId) const
+{
+    if (objectId < 0 || objectId >= static_cast<int>(m_renderObjects.size())) {
+        return false;
+    }
+    if (auto &obj = m_renderObjects[objectId]) {
+        return obj->isUsingNormalMap();
     }
     return false;
 }

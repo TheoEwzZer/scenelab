@@ -31,6 +31,11 @@ void TextureManager::renderUI(bool *p_open)
     ImGui::SeparatorText("Texture Library");
     renderTextureLibraryPanel();
 
+    ImGui::SeparatorText("Normal mapping");
+    renderNormalMapping();
+
+    renderMapSelectionPanel();
+
     ImGui::SeparatorText("Tone Mapping");
     renderToneMappingPanel();
 
@@ -164,6 +169,105 @@ void TextureManager::renderSelectionPanel()
             }
         } else {
             ImGui::TextDisabled("No textures available to assign.");
+        }
+    }
+}
+
+void TextureManager::renderMapSelectionPanel()
+{
+    const auto &selectedNodes = m_transformManager.getSelectedNodes();
+
+    std::vector<int> objectIds;
+    objectIds.reserve(selectedNodes.size());
+    for (auto *node : selectedNodes) {
+        if (!node) {
+            continue;
+        }
+        int rendererId = node->getData().rendererId;
+        if (rendererId >= 0) {
+            objectIds.push_back(rendererId);
+        }
+    }
+
+    if (objectIds.empty()) {
+        ImGui::TextDisabled("Select an object to edit its normal map.");
+        return;
+    }
+
+    const auto &normalMap = m_renderer.getNormalMapResources();
+    std::vector<int> mapHandle;
+    std::vector<const char *> mapName;
+    mapHandle.reserve(normalMap.size());
+    mapName.reserve(normalMap.size());
+    for (const auto &normal : normalMap) {
+        mapHandle.push_back(normal.handle);
+        mapName.push_back(normal.name.c_str());
+    }
+
+    if (objectIds.size() == 1) {
+        const int objectId = objectIds.front();
+        bool useNormalMap = m_renderer.getObjectUseNormalMap(objectId);
+        if (ImGui::Checkbox("Use Normal Map", &useNormalMap)) {
+            m_renderer.setObjectUseNormalMap(objectId, useNormalMap);
+        }
+
+        if (!mapName.empty()) {
+            const int currentHandle
+                = m_renderer.getObjectNormalMapHandle(objectId);
+            int currentIndex = 0;
+            for (size_t i = 0; i < mapHandle.size(); ++i) {
+                if (mapHandle[i] == currentHandle) {
+                    currentIndex = static_cast<int>(i);
+                    break;
+                }
+            }
+            if (ImGui::Combo("Normal Map", &currentIndex, mapName.data(),
+                    static_cast<int>(mapName.size()))) {
+                if (currentIndex >= 0
+                    && currentIndex < static_cast<int>(mapHandle.size())) {
+                    m_renderer.assignNormalMapToObject(
+                        objectId, mapHandle[currentIndex]);
+                    m_renderer.setObjectUseNormalMap(objectId, true);
+                }
+            }
+
+            if (mapName.size() == 1) {
+                int onlyHandle = mapHandle[0];
+                if (currentHandle != onlyHandle) {
+                    m_renderer.assignNormalMapToObject(objectId, onlyHandle);
+                    m_renderer.setObjectUseNormalMap(objectId, false);
+                }
+            }
+        } else {
+            ImGui::TextDisabled("No map available.");
+        }
+
+        int normalMapHandle = m_renderer.getObjectNormalMapHandle(objectId);
+        if (const NormalMapResource *res
+            = m_renderer.getNormalMapResource(normalMapHandle)) {
+            ImGui::Text("Selected normal map: %s", res->name.c_str());
+            ImGui::Text("Size: %dx%d", static_cast<int>(res->size.x),
+                static_cast<int>(res->size.y));
+        }
+
+    } else {
+        ImGui::Text("%zu objects selected", objectIds.size());
+        if (!mapName.empty()) {
+            if (m_selectedNormalMapIndex >= static_cast<int>(mapName.size())) {
+                m_selectedNormalMapIndex = 0;
+            }
+            ImGui::Combo("Map##multi", &m_selectedNormalMapIndex,
+                mapName.data(), static_cast<int>(mapName.size()));
+            if (ImGui::Button("Assign To Selection")) {
+                if (m_selectedNormalMapIndex >= 0
+                    && m_selectedNormalMapIndex
+                        < static_cast<int>(mapHandle.size())) {
+                    assignNormalMapToSelection(
+                        mapHandle[m_selectedNormalMapIndex]);
+                }
+            }
+        } else {
+            ImGui::TextDisabled("No normal map available to assign.");
         }
     }
 }
@@ -303,6 +407,39 @@ void TextureManager::renderTextureLibraryPanel()
     }
 }
 
+void TextureManager::renderNormalMapping()
+{
+    if (ImGui::Button("Import normal map From File")) {
+        IGFD::FileDialogConfig config;
+        config.path = "../assets";
+        config.countSelectionMax = 1;
+        ImGuiFileDialog::Instance()->OpenDialog("NormalMapImportDialog",
+            "Select Map",
+            "Image files{.png,.jpg,.jpeg,.bmp,.tga,.dds,.ktx,.ktx2}", config);
+    }
+
+    if (ImGuiFileDialog::Instance()->Display("NormalMapImportDialog",
+            ImGuiWindowFlags_NoCollapse, ImVec2(520, 400))) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            std::string filePath
+                = ImGuiFileDialog::Instance()->GetFilePathName();
+            const int handle = m_renderer.loadNormalMap(filePath);
+            if (handle >= 0) {
+                const auto &normalMaps = m_renderer.getTextureResources();
+                int filteredIndex = 0;
+                for (const auto &normal : normalMaps) {
+                    if (normal.handle == handle) {
+                        m_selectedNormalMapIndex = filteredIndex;
+                        break;
+                    }
+                    ++filteredIndex;
+                }
+            }
+        }
+        ImGuiFileDialog::Instance()->Close();
+    }
+}
+
 void TextureManager::renderToneMappingPanel()
 {
     int toneIndex = static_cast<int>(m_renderer.getToneMappingMode());
@@ -410,6 +547,28 @@ void TextureManager::assignTextureToSelection(int textureHandle)
         if (rendererId >= 0) {
             m_renderer.assignTextureToObject(rendererId, textureHandle);
             m_renderer.setObjectUseTexture(rendererId, true);
+        }
+    }
+}
+
+void TextureManager::assignNormalMapToSelection(int normalMapHandle)
+{
+    if (normalMapHandle < 0) {
+        return;
+    }
+    if (const NormalMapResource *res
+        = m_renderer.getNormalMapResource(normalMapHandle);
+        !res) {
+        return;
+    }
+    for (auto *node : m_transformManager.getSelectedNodes()) {
+        if (!node) {
+            continue;
+        }
+        if (const int rendererId = node->getData().rendererId;
+            rendererId >= 0) {
+            m_renderer.assignNormalMapToObject(rendererId, normalMapHandle);
+            m_renderer.setObjectUseNormalMap(rendererId, true);
         }
     }
 }

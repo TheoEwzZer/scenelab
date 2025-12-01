@@ -43,6 +43,9 @@ public:
         = 0;
     virtual void updateTransform(int objectId, const glm::mat4 &modelMatrix)
         = 0;
+    virtual void updateGeometry(
+        int objectId, const std::vector<float> &vertices)
+        = 0;
     virtual void removeObject(int objectId) = 0;
     virtual void drawBoundingBox(
         int objectId, const glm::vec3 &corner1, const glm::vec3 &corner2)
