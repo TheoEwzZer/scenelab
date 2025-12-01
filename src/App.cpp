@@ -443,19 +443,56 @@ void App::switchRenderer()
     }
 
     // Re-register all objects with the new renderer
-    m_sceneGraph.traverse([&](GameObject &obj, int depth) {
-        (void)depth;
-        if (obj.rendererId >= 0
-            && obj.rendererId < static_cast<int>(objects.size())) {
-            auto &renderObj = objects[obj.rendererId];
+    bool isPathTracing
+        = dynamic_cast<PathTracingRenderer *>(m_renderer.get()) != nullptr;
+
+    if (isPathTracing) {
+        // Store helper objects for later restoration
+        m_helperObjects.clear();
+        m_sceneGraph.traverse([&](GameObject &obj, int depth) {
+            (void)depth;
+            if (obj.rendererId >= 0
+                && obj.rendererId < static_cast<int>(objects.size())) {
+                if (obj.isHelper()) {
+                    // Store helper for later
+                    m_helperObjects.emplace_back(
+                        &obj, std::move(objects[obj.rendererId]));
+                    obj.rendererId = -1;
+                } else {
+                    auto &renderObj = objects[obj.rendererId];
+                    if (renderObj) {
+                        obj.rendererId
+                            = m_renderer->registerObject(std::move(renderObj));
+                    } else {
+                        obj.rendererId = -1;
+                    }
+                }
+            }
+        });
+    } else {
+        // Rasterization mode - restore helper objects
+        m_sceneGraph.traverse([&](GameObject &obj, int depth) {
+            (void)depth;
+            if (obj.rendererId >= 0
+                && obj.rendererId < static_cast<int>(objects.size())) {
+                auto &renderObj = objects[obj.rendererId];
+                if (renderObj) {
+                    obj.rendererId
+                        = m_renderer->registerObject(std::move(renderObj));
+                } else {
+                    obj.rendererId = -1;
+                }
+            }
+        });
+        // Re-register stored helper objects
+        for (auto &[objPtr, renderObj] : m_helperObjects) {
             if (renderObj) {
-                obj.rendererId
+                objPtr->rendererId
                     = m_renderer->registerObject(std::move(renderObj));
-            } else {
-                obj.rendererId = -1;
             }
         }
-    });
+        m_helperObjects.clear();
+    }
 
     // Update transforms for all re-registered objects
     m_sceneGraph.traverseWithTransform(

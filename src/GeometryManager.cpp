@@ -230,6 +230,7 @@ void GeometryManager::initGeometryWindow(
             point.setAABB(aabbCorner1, aabbCorner2);
             point.setName(
                 std::format("Sphere {}", m_geometryWindow.m_sphereCount));
+            point.setHelper(true);
             m_renderer->updateTransform(
                 point.rendererId, point.getModelMatrix());
 
@@ -288,6 +289,7 @@ void GeometryManager::initGeometryWindow(
         point.setAABB(aabbCorner1, aabbCorner2);
         point.setName(
             std::format("Sphere {}", m_geometryWindow.m_sphereCount));
+        point.setHelper(true); // Control point - not rendered in path tracing
         m_renderer->updateTransform(point.rendererId, point.getModelMatrix());
 
         auto childNode = std::make_unique<SceneGraph::Node>();

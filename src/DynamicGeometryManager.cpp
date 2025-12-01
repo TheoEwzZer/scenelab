@@ -3,6 +3,7 @@
 //
 
 #include "../include/DynamicGeometryManager.hpp"
+#include "renderer/implementation/RasterizationRenderer.hpp"
 
 DynamicGeometryManager::DynamicGeometryManager(
     std::unique_ptr<IRenderer> &renderer) :
@@ -17,6 +18,11 @@ void DynamicGeometryManager::addCurve(std::unique_ptr<ParametricCurve> curve)
 
 void DynamicGeometryManager::updateGeometry()
 {
+    // Only update geometry in rasterization mode
+    if (!dynamic_cast<RasterizationRenderer *>(m_renderer.get())) {
+        return;
+    }
+
     for (const auto &curve : m_curves) {
         curve->updateGeometry(*m_renderer);
     }

@@ -23,6 +23,7 @@
 #include "Image.hpp"
 #include "illumination/Illumination.hpp"
 #include "renderer/interface/IRenderer.hpp"
+#include "RenderableObject.hpp"
 #include "renderer/Window.hpp"
 #include "TextureManager.hpp"
 #include "shapes/ParametricCurve.hpp"
@@ -59,7 +60,8 @@ private:
     std::unique_ptr<TransformManager> m_transformManager;
     std::unique_ptr<CameraController> m_cameraController;
     std::unique_ptr<TextureManager> m_textureManager;
-    // std::vector
+    std::vector<std::pair<GameObject *, std::unique_ptr<RenderableObject>>>
+        m_helperObjects; // Stored when switching to path tracing
 
     void init();
     void update();
