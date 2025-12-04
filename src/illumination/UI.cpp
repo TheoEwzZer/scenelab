@@ -14,7 +14,8 @@ using namespace Illumination;
 
 UIIllumination::UIIllumination(
     TransformManager &tref, SceneGraph &sceneGraph) :
-    m_illumination_model(0), m_tref(tref), m_sceneGraph(sceneGraph)
+    m_illumination_model(0),
+    m_tref(tref), m_sceneGraph(sceneGraph)
 {
 }
 
@@ -44,19 +45,48 @@ static void setFloat3(float *target_float_3, const glm::vec3 &v)
 void UIIllumination::renderLightUI(App *app)
 {
     static const char *models[]
-        = { "Lambert", "Phong", "Blinn-Phong", "Gouraud" };
+        = { "Lambert", "Phong", "Blinn-Phong", "Gouraud",  "PBR" };
 
     auto rend = dynamic_cast<PathTracingRenderer *>(app->m_renderer.get());
+    auto *rasterRenderer = dynamic_cast<RasterizationRenderer *>(app->m_renderer.get());
 
     ImGui::Begin("Illumination");
     ImGui::Text("Scene illumination");
-
     if (!rend) {
-        if (ImGui::Combo("Model", &m_illumination_model, models,
-                IM_ARRAYSIZE(models))) {
-            app->m_renderer->setLightingModel(
-                static_cast<IRenderer::LightingModel>(m_illumination_model));
+        if (rasterRenderer != nullptr) {
+            ImGui::Text("Scene illumination");
+            ImGui::Separator();
+            if (ImGui::Combo("Model", &m_illumination_model, models,
+                    IM_ARRAYSIZE(models))) {
+                app->m_renderer->setLightingModel(
+                    static_cast<IRenderer::LightingModel>(m_illumination_model));
+            }
         }
+            rasterRenderer->setLightingModel(
+                static_cast<IRenderer::LightingModel>(m_illumination_model));
+            // Deferred Rendering toggle
+            bool useDeferred = rasterRenderer->getUseDeferredRendering();
+            if (ImGui::Checkbox("Deferred Rendering", &useDeferred)) {
+                rasterRenderer->setUseDeferredRendering(useDeferred);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Enable G-Buffer based deferred rendering");
+            }
+
+            // IBL toggle - only shown in PBR mode
+            if (m_illumination_model == 4) {
+                bool useIBL = rasterRenderer->getUseIBL();
+                if (ImGui::Checkbox("Use IBL (Environment Lighting)", &useIBL)) {
+                    rasterRenderer->setUseIBL(useIBL);
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip(
+                        "Use Image-Based Lighting from the active cubemap/HDR");
+                }
+                if (useIBL && ImGui::Button("Regenerate IBL")) {
+                    rasterRenderer->generateIBLFromCurrentCubemap();
+                }
+            }
     }
 
     ImGui::Separator();
@@ -151,6 +181,8 @@ void UIIllumination::renderMaterialUI(App *app)
 {
     static const char *materials_preset[] = { "Brass", "Bronze", "Gold",
         "Silver", "Copper", "Plastic", "Chrome", "Ceramic" };
+    static const char *pbr_preset[]
+        = { "Gold", "Copper", "Iron", "Plastic Red", "Rubber" };
 
     ImGui::Begin("Material");
     ImGui::Text("Material Editor");
@@ -173,12 +205,30 @@ void UIIllumination::renderMaterialUI(App *app)
     ImGui::ColorEdit3("Emissive Color", m_emissive_color);
     ImGui::SliderFloat("Shininess", &m_shininess, 1.0f, 150.0f);
 
+    // PBR Material section (shown when PBR mode is active)
+    if (m_illumination_model == 4) { // PBR mode
+        ImGui::Separator();
+        ImGui::Text("PBR Material");
+
+        if (ImGui::Combo("PBR Preset", &m_pbr_preset, pbr_preset,
+                IM_ARRAYSIZE(pbr_preset))) {
+            const auto &preset = pbrMaterials[m_pbr_preset];
+            setFloat3(m_diffuse_color, preset.albedo);
+            m_metallic = preset.metallic;
+            m_roughness = preset.roughness;
+            m_ao = preset.ao;
+        }
+
+        ImGui::ColorEdit3("Albedo", m_diffuse_color);
+        ImGui::SliderFloat("Metallic", &m_metallic, 0.0f, 1.0f);
+        ImGui::SliderFloat("Roughness", &m_roughness, 0.0f, 1.0f);
+        ImGui::SliderFloat("Ambient Occlusion", &m_ao, 0.0f, 1.0f);
+    }
+
     ImGui::Separator();
     ImGui::Text("- Path tracing only -");
     ImGui::SliderFloat("Percent Specular", &m_percentSpecular, 0.0f, 1.0f);
-    ImGui::SliderFloat("Roughness", &m_roughness, 0.0f, 1.0f);
-    ImGui::SliderFloat(
-        "Index Of Refraction", &m_indexOfRefraction, 1.0f, 4.0f);
+    ImGui::SliderFloat("Index Of Refraction", &m_indexOfRefraction, 1.0f, 4.0f);
     ImGui::SliderFloat("Refraction Chance", &m_refractionChance, 0.0f, 1.0f);
 
     if (ImGui::Button("Apply Material")) {
@@ -198,6 +248,12 @@ void UIIllumination::renderMaterialUI(App *app)
                         m_emissive_color[2]),
                     m_shininess, m_roughness, m_percentSpecular,
                     m_indexOfRefraction, m_refractionChance);
+
+                // Set PBR properties
+                mat.m_metallic = m_metallic;
+                mat.m_roughness = m_roughness;
+                mat.m_ao = m_ao;
+                mat.m_usePBR = (m_illumination_model == 4);
                 app->m_renderer->setObjectMaterial(rendererId, mat);
             }
         }

@@ -46,10 +46,12 @@ out vec4 FragColor;
 in vec2 TexCoord;
 in vec3 Normal;
 in vec3 FragPos;
+in mat3 TBN;
 
 uniform sampler2D ourTexture;
+uniform sampler2D normalMap;
 uniform bool useTexture;
-
+uniform bool useNormalMap;
 uniform int filterMode;
 uniform vec2 texelSize;
 uniform int toneMappingMode;
@@ -71,11 +73,9 @@ uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 vec3 applyKernel(const float kernel[9])
 {
     vec3 accum = vec3(0.0);
-    vec2 offsets[9] = vec2[](
-        vec2(-1.0, -1.0), vec2(0.0, -1.0), vec2(1.0, -1.0),
-        vec2(-1.0,  0.0), vec2(0.0,  0.0), vec2(1.0,  0.0),
-        vec2(-1.0,  1.0), vec2(0.0,  1.0), vec2(1.0,  1.0)
-    );
+    vec2 offsets[9] = vec2[](vec2(-1.0, -1.0), vec2(0.0, -1.0),
+        vec2(1.0, -1.0), vec2(-1.0, 0.0), vec2(0.0, 0.0), vec2(1.0, 0.0),
+        vec2(-1.0, 1.0), vec2(0.0, 1.0), vec2(1.0, 1.0));
 
     for (int i = 0; i < 9; ++i) {
         vec2 sampleOffset = offsets[i] * texelSize;
@@ -100,29 +100,20 @@ vec3 applyFilter(vec3 baseColor)
     }
 
     if (filterMode == 2) {
-        const float sharpenKernel[9] = float[](
-            0.0, -1.0, 0.0,
-           -1.0,  5.0, -1.0,
-            0.0, -1.0, 0.0
-        );
+        const float sharpenKernel[9]
+            = float[](0.0, -1.0, 0.0, -1.0, 5.0, -1.0, 0.0, -1.0, 0.0);
         return clamp(applyKernel(sharpenKernel), 0.0, 1.0);
     }
 
     if (filterMode == 3) {
-        const float edgeKernel[9] = float[](
-           -1.0, -1.0, -1.0,
-           -1.0,  8.0, -1.0,
-           -1.0, -1.0, -1.0
-        );
+        const float edgeKernel[9]
+            = float[](-1.0, -1.0, -1.0, -1.0, 8.0, -1.0, -1.0, -1.0, -1.0);
         return clamp(applyKernel(edgeKernel), 0.0, 1.0);
     }
 
     if (filterMode == 4) {
-        const float blurKernel[9] = float[](
-            1.0/9.0, 1.0/9.0, 1.0/9.0,
-            1.0/9.0, 1.0/9.0, 1.0/9.0,
-            1.0/9.0, 1.0/9.0, 1.0/9.0
-        );
+        const float blurKernel[9] = float[](1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0,
+            1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0);
         return clamp(applyKernel(blurKernel), 0.0, 1.0);
     }
 
@@ -143,17 +134,15 @@ vec3 applyToneMapping(vec3 color)
         const float D = 0.59;
         const float E = 0.14;
         mapped = clamp(
-            (mapped * (A * mapped + B)) / (mapped * (C * mapped + D) + E),
-            0.0, 1.0);
+            (mapped * (A * mapped + B)) / (mapped * (C * mapped + D) + E), 0.0,
+            1.0);
         mapped = pow(mapped, vec3(1.0 / 2.2));
     }
 
     return mapped;
 }
 
-vec3 getViewVector() {
-    return normalize(viewPosition - FragPos);
-}
+vec3 getViewVector() { return normalize(viewPosition - FragPos); }
 
 LightOutput prepareDirLight(DirectionalLight L)
 {
@@ -190,7 +179,8 @@ LightOutput prepareSpotLight(SpotLight L)
     Loutput.L = normalize(lightV);
     vec3 spotDirection = normalize(L.direction);
 
-    float intensity = attenuation * pow(max(dot(-Loutput.L, spotDirection), 0.0), L.p);
+    float intensity
+        = attenuation * pow(max(dot(-Loutput.L, spotDirection), 0.0), L.p);
     Loutput.color = L.color * intensity;
     Loutput.H = normalize(Loutput.L + getViewVector());
     return Loutput;
@@ -206,12 +196,14 @@ vec3 modelLambert(vec3 N, LightOutput LOutput, vec3 diffuseTextureColor)
 vec3 modelPhong(vec3 N, LightOutput LOutput, vec3 diffuseTextureColor)
 {
     float diffuseFactor = max(dot(N, LOutput.L), 0.0);
-    vec3 diffuse = LOutput.color * diffuseFactor * objectMaterial.diffuse * diffuseTextureColor;
+    vec3 diffuse = LOutput.color * diffuseFactor * objectMaterial.diffuse
+        * diffuseTextureColor;
 
-    vec3 specular = vec3(0,0,0);
+    vec3 specular = vec3(0, 0, 0);
     if (diffuseFactor > 0.0) {
         vec3 R = normalize(2.0 * dot(N, LOutput.L) * N - LOutput.L);
-        float lspecular = pow(max(dot(getViewVector(), R), 0.0), objectMaterial.shininess);
+        float lspecular
+            = pow(max(dot(getViewVector(), R), 0.0), objectMaterial.shininess);
         specular = LOutput.color * lspecular * objectMaterial.specular;
     }
 
@@ -221,11 +213,13 @@ vec3 modelPhong(vec3 N, LightOutput LOutput, vec3 diffuseTextureColor)
 vec3 modelBlinnPhong(vec3 N, LightOutput LOutput, vec3 diffuseTextureColor)
 {
     float diffuseFactor = max(dot(N, LOutput.L), 0.0);
-    vec3 diffuse = LOutput.color * diffuseFactor * objectMaterial.diffuse * diffuseTextureColor;
+    vec3 diffuse = LOutput.color * diffuseFactor * objectMaterial.diffuse
+        * diffuseTextureColor;
 
-    vec3 specular = vec3(0,0,0);
+    vec3 specular = vec3(0, 0, 0);
     if (diffuseFactor > 0.0) {
-        float lspecular = pow(max(dot(N, LOutput.H), 0.0), objectMaterial.shininess);
+        float lspecular
+            = pow(max(dot(N, LOutput.H), 0.0), objectMaterial.shininess);
         specular = LOutput.color * lspecular * objectMaterial.specular;
     }
 
@@ -234,11 +228,11 @@ vec3 modelBlinnPhong(vec3 N, LightOutput LOutput, vec3 diffuseTextureColor)
 
 vec3 calculateLight(vec3 N, LightOutput LOutput, vec3 diffuseTextureColor)
 {
-    if (lightingModel == 0) {           // Lambert
+    if (lightingModel == 0) { // Lambert
         return modelLambert(N, LOutput, diffuseTextureColor);
-    } else if (lightingModel == 1) {    // Phong
+    } else if (lightingModel == 1) { // Phong
         return modelPhong(N, LOutput, diffuseTextureColor);
-    } else if (lightingModel == 2) {    // Blinn-Phong
+    } else if (lightingModel == 2) { // Blinn-Phong
         return modelBlinnPhong(N, LOutput, diffuseTextureColor);
     }
 
@@ -247,29 +241,37 @@ vec3 calculateLight(vec3 N, LightOutput LOutput, vec3 diffuseTextureColor)
 
 void main()
 {
-    vec4 sampledColor
-        = useTexture ? texture(ourTexture, TexCoord) : vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 sampledColor = useTexture ? texture(ourTexture, TexCoord)
+                                   : vec4(1.0, 1.0, 1.0, 1.0);
     vec3 diffuseTextureColor = applyFilter(sampledColor.rgb);
-    vec3 normal = normalize(Normal);
+
+    vec3 normal;
+    if (useNormalMap) {
+        vec3 n = texture(normalMap, TexCoord).rgb * 2.0 - 1.0;
+        normal = normalize(TBN * n);
+    } else {
+        normal = normalize(Normal);
+    }
 
     LightOutput LOutput;
     vec3 totalLight = vec3(0.0);
-    vec3 ambient = ambientLightColor * objectMaterial.ambient * diffuseTextureColor;
+    vec3 ambient
+        = ambientLightColor * objectMaterial.ambient * diffuseTextureColor;
     vec3 emissive = objectMaterial.emissive;
-    for(int i = 0; i < NB_DIR_LIGHTS; i++) {
+    for (int i = 0; i < NB_DIR_LIGHTS; i++) {
         LOutput = prepareDirLight(directionalLights[i]);
         totalLight += calculateLight(normal, LOutput, diffuseTextureColor);
     }
-    for(int i = 0; i < NB_POINT_LIGHTS; i++) {
+    for (int i = 0; i < NB_POINT_LIGHTS; i++) {
         LOutput = preparePointLight(pointLights[i]);
         totalLight += calculateLight(normal, LOutput, diffuseTextureColor);
     }
-    for(int i = 0; i < NB_SPOT_LIGHTS; i++) {
+    for (int i = 0; i < NB_SPOT_LIGHTS; i++) {
         LOutput = prepareSpotLight(spotLights[i]);
         totalLight += calculateLight(normal, LOutput, diffuseTextureColor);
     }
 
-    vec3 shaded = ambient + emissive + totalLight;
+vec3 shaded = ambient + emissive + totalLight;
 
     vec3 toneMapped = applyToneMapping(shaded);
     vec3 finalColor = (toneMappingMode == 0) ? shaded : toneMapped;

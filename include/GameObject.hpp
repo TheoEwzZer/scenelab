@@ -13,6 +13,7 @@ protected:
     glm::vec3 m_aabbCorner1 { 0.0f };
     glm::vec3 m_aabbCorner2 { 0.0f };
     bool m_isBoundingBoxActive { false };
+    bool m_isHelper { false };
 
 public:
     mutable glm::mat4 m_localMatrix { 1.0f };
@@ -64,4 +65,8 @@ public:
     {
         return m_isBoundingBoxActive;
     }
+
+    void setHelper(bool helper) { m_isHelper = helper; }
+
+    [[nodiscard]] bool isHelper() const { return m_isHelper; }
 };

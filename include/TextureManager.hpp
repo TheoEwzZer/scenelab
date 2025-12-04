@@ -20,6 +20,7 @@ private:
     RasterizationRenderer &m_renderer;
 
     int m_selectedTextureIndex = 0;
+    int m_selectedNormalMapIndex = 0;
     glm::vec3 m_checkerColorA { 0.9f, 0.9f, 0.9f };
     glm::vec3 m_checkerColorB { 0.2f, 0.2f, 0.25f };
     int m_checkerChecks = 16;
@@ -29,9 +30,12 @@ private:
 
     void renderSelectionPanel();
     void renderTextureLibraryPanel();
+    void renderNormalMapping();
+    void renderMapSelectionPanel();
     void renderToneMappingPanel();
     void renderCubemapPanel();
 
     void assignTextureToSelection(int textureHandle);
+    void assignNormalMapToSelection(int normalMapHandle);
     void applyFilterToSelection(FilterMode mode);
 };

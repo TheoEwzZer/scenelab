@@ -4,6 +4,4 @@ out vec4 FragColor;
 
 uniform vec3 bboxColor;
 
-void main() {
-    FragColor = vec4(bboxColor, 1.0);
-}
+void main() { FragColor = vec4(bboxColor, 1.0); }

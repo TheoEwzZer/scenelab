@@ -14,7 +14,28 @@ void AnalyticalPlane::init(float width, float height, const glm::vec3 &normal)
     m_planeNormal = glm::normalize(normal);
 
     auto data = GeometryGenerator::generatePlane(width, height, normal);
-    m_vertices = data.vertices;
+
+    // Convert Vertex data to float array for path tracing
+    m_vertices.reserve(data.vertices.size() * 14);
+    for (const auto &v : data.vertices) {
+        m_vertices.push_back(v.position.x);
+        m_vertices.push_back(v.position.y);
+        m_vertices.push_back(v.position.z);
+        m_vertices.push_back(v.texCoord.x);
+        m_vertices.push_back(v.texCoord.y);
+        m_vertices.push_back(v.normal.x);
+        m_vertices.push_back(v.normal.y);
+        m_vertices.push_back(v.normal.z);
+        m_vertices.push_back(v.tangent.x);
+        m_vertices.push_back(v.tangent.y);
+        m_vertices.push_back(v.tangent.z);
+        m_vertices.push_back(v.bitangent.x);
+        m_vertices.push_back(v.bitangent.y);
+        m_vertices.push_back(v.bitangent.z);
+    }
+
+    indexCount = static_cast<unsigned int>(data.vertices.size());
+    useIndices = false;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -22,21 +43,24 @@ void AnalyticalPlane::init(float width, float height, const glm::vec3 &normal)
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(float),
-        m_vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, indexCount * sizeof(Vertex),
+        data.vertices.data(), GL_STATIC_DRAW);
 
-    indexCount = static_cast<unsigned int>(m_vertices.size() / 8);
-    useIndices = false;
-
-    glVertexAttribPointer(
-        0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-        (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-        (void *)(5 * sizeof(float)));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, normal));
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, tangent));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        (void *)offsetof(Vertex, bitangent));
+    glEnableVertexAttribArray(4);
     glBindVertexArray(0);
 
     isActive = true;

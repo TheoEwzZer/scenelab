@@ -1,6 +1,8 @@
 #include "GeometryManager.hpp"
 #include "GeometryGenerator.hpp"
 #include "OBJLoader.hpp"
+#include "objects/DynamicLine.hpp"
+
 #include <iostream>
 #include <format>
 #include <glm/glm.hpp>
@@ -10,14 +12,16 @@
 #include "objects/AnalyticalSphere.hpp"
 #include "objects/AnalyticalPlane.hpp"
 
-GeometryManager::GeometryManager(
-    SceneGraph &sceneGraph, std::unique_ptr<IRenderer> &renderer) :
+GeometryManager::GeometryManager(SceneGraph &sceneGraph,
+    std::unique_ptr<IRenderer> &renderer,
+    DynamicGeometryManager &parametricCurveManager) :
     m_sceneGraph(sceneGraph),
-    m_renderer(renderer)
+    m_renderer(renderer), m_dynamicGeometryManager(parametricCurveManager)
 {
 }
 
-void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
+void GeometryManager::initGeometryWindow(
+    const std::function<void()> &onObjectCreated)
 {
     m_geometryWindow.onSpawnCube = [this, onObjectCreated](float size) {
         GameObject new_obj;
@@ -202,6 +206,116 @@ void GeometryManager::initGeometryWindow(std::function<void()> onObjectCreated)
 
         if (onObjectCreated) {
             onObjectCreated();
+        }
+    };
+
+    m_geometryWindow.onSpawnParametricCurve = [this, onObjectCreated](
+                                                  int controlPoints) {
+        auto curve = std::make_unique<ParametricCurve>();
+        for (int i = 0; i < controlPoints; ++i) {
+            GameObject point;
+            auto [vertices, aabbCorner1, aabbCorner2] {
+                GeometryGenerator::generateSphere(0.05, 36, 18)
+            };
+            glm::vec3 neutralGray { 0.75f, 0.75f, 0.75f };
+
+            point.rendererId = m_renderer->registerObject(
+                std::make_unique<Object3D>(
+                    vertices, std::vector<unsigned int> {}),
+                neutralGray);
+            // Spread control points along X axis to avoid degenerate
+            // Catmull-Rom
+            float spacing = 0.5f;
+            point.setPosition({ i * spacing, 0.0f, 0.0f });
+            point.setAABB(aabbCorner1, aabbCorner2);
+            point.setName(
+                std::format("Sphere {}", m_geometryWindow.m_sphereCount));
+            point.setHelper(true);
+            m_renderer->updateTransform(
+                point.rendererId, point.getModelMatrix());
+
+            auto childNode = std::make_unique<SceneGraph::Node>();
+            childNode->setData(point);
+            SceneGraph::Node *rawPtr = childNode.get();
+            m_sceneGraph.getRoot()->addChild(std::move(childNode));
+            curve->addControlPoint(rawPtr);
+        }
+        glm::vec3 randomColor { rand() / (float)RAND_MAX,
+            rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
+        int id = m_renderer->registerObject(
+            std::make_unique<DynamicLine>(randomColor));
+        curve->registerCurve(id);
+        curve->updateGeometry(*m_renderer);
+        m_dynamicGeometryManager.addCurve(std::move(curve));
+
+        if (onObjectCreated) {
+            onObjectCreated();
+        }
+    };
+
+    m_geometryWindow.onAddPoint = [this, onObjectCreated]() {
+        Triangulation *mesh = m_dynamicGeometryManager.getLastEmpty();
+        GameObject point;
+        auto [vertices, aabbCorner1,
+            aabbCorner2] { GeometryGenerator::generateSphere(0.05, 36, 18) };
+        glm::vec3 neutralGray { 0.75f, 0.75f, 0.75f };
+
+        point.rendererId = m_renderer->registerObject(
+            std::make_unique<Object3D>(vertices, std::vector<unsigned int> {}),
+            neutralGray);
+
+        // Spread points in a non-colinear pattern for Delaunay triangulation
+        int pointIndex = static_cast<int>(mesh->getPointCount());
+        float spacing = 0.5f;
+        float x, y;
+        // First 3 points form a triangle, then continue in grid
+        if (pointIndex == 0) {
+            x = 0.0f;
+            y = 0.0f;
+        } else if (pointIndex == 1) {
+            x = spacing;
+            y = 0.0f;
+        } else if (pointIndex == 2) {
+            x = spacing * 0.5f;
+            y = spacing * 0.866f;
+        } else {
+            int idx = pointIndex - 3;
+            int col = idx % 3;
+            int row = idx / 3 + 1;
+            x = col * spacing + (row % 2) * (spacing * 0.5f);
+            y = row * spacing * 0.866f + spacing;
+        }
+        point.setPosition({ x, y, 0.0f });
+        point.setAABB(aabbCorner1, aabbCorner2);
+        point.setName(
+            std::format("Sphere {}", m_geometryWindow.m_sphereCount));
+        point.setHelper(true); // Control point - not rendered in path tracing
+        m_renderer->updateTransform(point.rendererId, point.getModelMatrix());
+
+        auto childNode = std::make_unique<SceneGraph::Node>();
+        childNode->setData(point);
+        SceneGraph::Node *rawPtr = childNode.get();
+        m_sceneGraph.getRoot()->addChild(std::move(childNode));
+        mesh->addPoint(rawPtr);
+
+        if (onObjectCreated) {
+            onObjectCreated();
+        }
+    };
+
+    m_geometryWindow.onGenerateMesh = [this, onObjectCreated]() {
+        if (Triangulation *mesh = m_dynamicGeometryManager.getLastEmpty();
+            mesh->canTriangulate()) {
+            glm::vec3 randomColor { rand() / (float)RAND_MAX,
+                rand() / (float)RAND_MAX, rand() / (float)RAND_MAX };
+            const int id = m_renderer->registerObject(
+                std::make_unique<DynamicLine>(randomColor, GL_LINES));
+            mesh->registerRenderable(id);
+            mesh->updateGeometry(*m_renderer);
+
+            if (onObjectCreated) {
+                onObjectCreated();
+            }
         }
     };
 }

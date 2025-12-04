@@ -3,7 +3,4 @@ out vec4 FragColor;
 
 in vec3 Normal;
 
-void main()
-{
-    FragColor = vec4((Normal.xyz + 1.0) * 0.5, 1.0);
-}
+void main() { FragColor = vec4((Normal.xyz + 1.0) * 0.5, 1.0); }

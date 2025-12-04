@@ -24,14 +24,8 @@ static void addVertex(GData &data, const std::vector<glm::vec3> &positions,
         ? normals[normIdx - 1]
         : glm::vec3(0.0f, 0.0f, 1.0f);
 
-    data.vertices.push_back(pos.x);
-    data.vertices.push_back(pos.y);
-    data.vertices.push_back(pos.z);
-    data.vertices.push_back(tex.x);
-    data.vertices.push_back(tex.y);
-    data.vertices.push_back(norm.x);
-    data.vertices.push_back(norm.y);
-    data.vertices.push_back(norm.z);
+    Vertex::addVertex(data.vertices, pos, tex, norm);
+    Vertex::computeTangents(data.vertices);
 }
 
 GData OBJLoader::loadOBJ(

@@ -25,6 +25,11 @@ uniform sampler2D planeMaterialTex; // Materials: color, emissive, specular (3
                                     // pixels per plane)
 uniform int numPlanes;
 
+// BVH acceleration structure
+uniform sampler2D bvhNodeTex;  // BVH nodes: 2 pixels per node
+uniform sampler2D bvhPrimTex;  // BVH primitives: 1 pixel per primitive [type, index, 0, 0]
+uniform int numBVHNodes;
+
 struct SMaterialInfo {
     vec3 albedo;
     vec3 emissive;
@@ -227,14 +232,68 @@ PlaneMaterial loadPlaneMaterial(int planeIndex)
     return m;
 }
 
+// BVH node structure
+struct BVHNode {
+    vec3 boundsMin;
+    vec3 boundsMax;
+    int leftChild;  // -1 if leaf
+    int packedData; // rightChild if internal, triStart|(triCount<<16) if leaf
+};
+
+// Load BVH node from texture
+BVHNode loadBVHNode(int nodeIndex)
+{
+    BVHNode node;
+    // Pixel 0: [bounds.min.xyz, leftChild as float bits]
+    vec4 p0 = texelFetch(bvhNodeTex, ivec2(0, nodeIndex), 0);
+    node.boundsMin = p0.xyz;
+    node.leftChild = floatBitsToInt(p0.w);
+
+    // Pixel 1: [bounds.max.xyz, packedData as float bits]
+    vec4 p1 = texelFetch(bvhNodeTex, ivec2(1, nodeIndex), 0);
+    node.boundsMax = p1.xyz;
+    node.packedData = floatBitsToInt(p1.w);
+
+    return node;
+}
+
+// BVH Primitive structure
+struct BVHPrimitive {
+    int type;           // 0 = triangle, 1 = sphere
+    int originalIndex;  // Index in triangle/sphere array
+};
+
+// Load BVH primitive from texture
+BVHPrimitive loadBVHPrimitive(int primIndex)
+{
+    BVHPrimitive prim;
+    vec4 p = texelFetch(bvhPrimTex, ivec2(0, primIndex), 0);
+    prim.type = int(p.x);
+    prim.originalIndex = floatBitsToInt(p.y);
+    return prim;
+}
+
+// Fast ray-AABB intersection test using slab method
+bool intersectAABB(vec3 rayPos, vec3 invRayDir, vec3 bmin, vec3 bmax,
+    float tMin, float tMax)
+{
+    vec3 t0 = (bmin - rayPos) * invRayDir;
+    vec3 t1 = (bmax - rayPos) * invRayDir;
+    vec3 tmin = min(t0, t1);
+    vec3 tmax = max(t0, t1);
+    float enter = max(max(tmin.x, tmin.y), max(tmin.z, tMin));
+    float exit = min(min(tmax.x, tmax.y), min(tmax.z, tMax));
+    return enter <= exit && exit > 0.0;
+}
+
 const float c_epsilon = 0.0001f;
 const float c_pi = 3.14159265359f;
 const float c_twopi = 2.0f * c_pi;
 const float c_rayPosNormalNudge = 0.01f;
-const int c_numBounces = 100;
+const int c_numBounces = 10;
 const float c_superFar = 10000.0f;
 const float c_minimumRayHitTime = 0.1f;
-const int c_numRendersPerFrame = 5;
+const int c_numRendersPerFrame = 1;
 
 bool TestTriangleTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo info,
     in vec3 a, in vec3 b, in vec3 c, in vec3 precomputedNormal)
@@ -369,27 +428,82 @@ void TestSceneTrace(in vec3 rayPos, in vec3 rayDir, inout SRayHitInfo hitInfo)
     int closestPrimitiveType = -1;
     int closestIndex = -1;
 
-    // Test triangles
-    for (int triIndex = 0; triIndex < numTriangles; ++triIndex) {
-        TriangleGeom geom = loadTriangleGeom(triIndex);
-        if (TestTriangleTrace(rayPos, rayDir, hitInfo, geom.v0, geom.v1,
-                geom.v2, geom.normal)) {
-            closestPrimitiveType = 0;
-            closestIndex = triIndex;
+    // Precompute inverse ray direction for AABB tests
+    vec3 invRayDir = 1.0 / rayDir;
+
+    // Use BVH traversal for triangles AND spheres
+    if (numBVHNodes > 0) {
+        // Stack-based BVH traversal
+        int stack[64];
+        int stackPtr = 0;
+        stack[stackPtr++] = 0; // Start with root node
+
+        while (stackPtr > 0) {
+            int nodeIdx = stack[--stackPtr];
+            BVHNode node = loadBVHNode(nodeIdx);
+
+            // Test AABB intersection
+            if (!intersectAABB(rayPos, invRayDir, node.boundsMin, node.boundsMax,
+                    c_minimumRayHitTime, hitInfo.dist)) {
+                continue;
+            }
+
+            if (node.leftChild == -1) {
+                // Leaf node: test primitives (triangles or spheres)
+                int primStart = node.packedData & 0xFFFF;
+                int primCount = (node.packedData >> 16) & 0xFFFF;
+
+                for (int i = 0; i < primCount; i++) {
+                    BVHPrimitive prim = loadBVHPrimitive(primStart + i);
+
+                    if (prim.type == 0) {
+                        // Triangle
+                        TriangleGeom geom = loadTriangleGeom(prim.originalIndex);
+                        if (TestTriangleTrace(rayPos, rayDir, hitInfo, geom.v0,
+                                geom.v1, geom.v2, geom.normal)) {
+                            closestPrimitiveType = 0;
+                            closestIndex = prim.originalIndex;
+                        }
+                    } else {
+                        // Sphere
+                        SphereGeom geom = loadSphereGeom(prim.originalIndex);
+                        if (TestSphereTrace(rayPos, rayDir, hitInfo,
+                                geom.center, geom.radius)) {
+                            closestPrimitiveType = 1;
+                            closestIndex = prim.originalIndex;
+                        }
+                    }
+                }
+            } else {
+                // Internal node: push children onto stack
+                // Push right child first so left is processed first
+                stack[stackPtr++] = node.packedData; // rightChild
+                stack[stackPtr++] = node.leftChild;
+            }
+        }
+    } else {
+        // Fallback: linear traversal if no BVH
+        for (int triIndex = 0; triIndex < numTriangles; ++triIndex) {
+            TriangleGeom geom = loadTriangleGeom(triIndex);
+            if (TestTriangleTrace(rayPos, rayDir, hitInfo, geom.v0, geom.v1,
+                    geom.v2, geom.normal)) {
+                closestPrimitiveType = 0;
+                closestIndex = triIndex;
+            }
+        }
+
+        // Fallback for spheres too
+        for (int sphereIndex = 0; sphereIndex < numSpheres; ++sphereIndex) {
+            SphereGeom geom = loadSphereGeom(sphereIndex);
+            if (TestSphereTrace(
+                    rayPos, rayDir, hitInfo, geom.center, geom.radius)) {
+                closestPrimitiveType = 1;
+                closestIndex = sphereIndex;
+            }
         }
     }
 
-    // Test spheres
-    for (int sphereIndex = 0; sphereIndex < numSpheres; ++sphereIndex) {
-        SphereGeom geom = loadSphereGeom(sphereIndex);
-        if (TestSphereTrace(
-                rayPos, rayDir, hitInfo, geom.center, geom.radius)) {
-            closestPrimitiveType = 1;
-            closestIndex = sphereIndex;
-        }
-    }
-
-    // Test planes
+    // Test planes (keep linear - typically few planes, infinite extent)
     for (int planeIndex = 0; planeIndex < numPlanes; ++planeIndex) {
         PlaneGeom geom = loadPlaneGeom(planeIndex);
         if (TestPlaneTrace(rayPos, rayDir, hitInfo, geom.point, geom.normal)) {

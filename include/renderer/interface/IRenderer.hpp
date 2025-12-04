@@ -26,7 +26,7 @@ struct ImVec2;
 // Interface for renderers
 class IRenderer {
 public:
-enum LightingModel { LAMBERT = 0, PHONG = 1, BLINN_PHONG = 2, GOURAUD = 3 };
+enum LightingModel { LAMBERT = 0, PHONG = 1, BLINN_PHONG = 2, GOURAUD = 3, PBR = 4};
 
     virtual ~IRenderer() = default;
 
@@ -45,6 +45,9 @@ enum LightingModel { LAMBERT = 0, PHONG = 1, BLINN_PHONG = 2, GOURAUD = 3 };
         std::unique_ptr<RenderableObject> obj, const Material &material)
         = 0;
     virtual void updateTransform(int objectId, const glm::mat4 &modelMatrix)
+        = 0;
+    virtual void updateGeometry(
+        int objectId, const std::vector<float> &vertices)
         = 0;
     virtual void removeObject(int objectId) = 0;
     virtual void drawBoundingBox(

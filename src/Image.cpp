@@ -120,12 +120,12 @@ bool Image::addImageObjectAtScreenPos(
         glm::vec3 worldPos = screenToWorldPosition(mouseX, mouseY);
 
         // Create quad vertices
-        std::vector<float> quadVertices = createImageQuadVertices();
+        const std::vector<float> quadVertices = createImageQuadVertices();
 
         // Create new object
         GameObject newObject;
         newObject.rendererId
-            = m_renderer->registerObject(std::make_unique<Object3D>(quadVertices, std::vector<unsigned int>{}), path);
+            = m_renderer->registerObject(std::make_unique<Object3D>(Vertex::convertToVertex14(quadVertices), std::vector<unsigned int>{}), path);
 
         if (newObject.rendererId < 0) {
             setStatusMessage(
@@ -135,9 +135,9 @@ bool Image::addImageObjectAtScreenPos(
 
         newObject.setPosition(worldPos);
         // Set AABB for the image quad (default 1.0x1.0 size)
-        newObject.setAABB(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.5f, 0.5f, 0.0f));
+newObject.setAABB(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.5f, 0.5f, 0.0f));
 
-        std::unique_ptr<SceneGraph::Node> node = std::make_unique<SceneGraph::Node>();
+        auto node = std::make_unique<SceneGraph::Node>();
         node->setData(newObject);
         m_sceneGraph.getRoot()->addChild(std::move(node));
 
@@ -168,7 +168,7 @@ bool Image::addImageObjectAtScreenPos(
 void Image::addImportedImagePath(const std::string &path)
 {
     // Deduplicate by exact path
-    auto it = std::find_if(m_importedImages.begin(), m_importedImages.end(),
+    const auto it = std::ranges::find_if(m_importedImages,
         [&](const ImportedImage &img) { return img.path == path; });
     if (it == m_importedImages.end()) {
         m_importedImages.push_back(ImportedImage { path, true });
@@ -220,8 +220,8 @@ bool Image::computeHistogramForPath(const std::string &path)
     stbi_image_free(data);
 
     unsigned int maxCount = 0u;
-    for (size_t b = 0; b < counts.size(); ++b) {
-        if (counts[b] > maxCount) maxCount = counts[b];
+    for (unsigned int count : counts) {
+        if (count > maxCount) maxCount = count;
     }
 
     if (maxCount == 0u) {
@@ -244,9 +244,9 @@ bool Image::generateSampledImageAtCenter()
     // Validate sources
     std::vector<std::string> sources;
     sources.reserve(m_importedImages.size());
-    for (const auto &img : m_importedImages) {
-        if (img.selected) {
-            sources.push_back(img.path);
+    for (const auto &[path, selected] : m_importedImages) {
+        if (selected) {
+            sources.push_back(path);
         }
     }
     if (sources.empty()) {
@@ -255,16 +255,15 @@ bool Image::generateSampledImageAtCenter()
     }
 
     // Clamp configuration
-    int W = std::max(1, m_sampleOutWidth);
-    int H = std::max(1, m_sampleOutHeight);
-    int tile = std::max(1, m_tileSize);
+    const int W = std::max(1, m_sampleOutWidth);
+    const int H = std::max(1, m_sampleOutHeight);
+    const int tile = std::max(1, m_tileSize);
 
     std::vector<Src> loaded;
     loaded.reserve(sources.size());
     for (const auto &p : sources) {
         int w = 0, h = 0, c = 0;
-        unsigned char *data = stbi_load(p.c_str(), &w, &h, &c, 0);
-        if (data && w > 0 && h > 0 && c >= 1) {
+        if (unsigned char *data = stbi_load(p.c_str(), &w, &h, &c, 0);data && w > 0 && h > 0 && c >= 1) {
             loaded.push_back(Src { data, w, h, c });
         }
     }
@@ -279,7 +278,7 @@ bool Image::generateSampledImageAtCenter()
     try {
         out.resize(static_cast<size_t>(W) * static_cast<size_t>(H) * 3u, 0);
     } catch (...) {
-        for (auto &s : loaded) {
+        for (const auto &s : loaded) {
             stbi_image_free(s.pixels);
         }
         setStatusMessage("Error: Failed to allocate output image", 5.0f, true);
@@ -293,20 +292,20 @@ bool Image::generateSampledImageAtCenter()
 
     for (int y = 0; y < H; y += tile) {
         for (int x = 0; x < W; x += tile) {
-            const Src &s = loaded[pickSrc(rng)];
-            std::uniform_int_distribution<int> pickX(0, s.w - 1);
-            std::uniform_int_distribution<int> pickY(0, s.h - 1);
+            const auto &[pixels, w, h, channels] = loaded[pickSrc(rng)];
+            std::uniform_int_distribution<int> pickX(0, w - 1);
+            std::uniform_int_distribution<int> pickY(0, h - 1);
             const int sx = pickX(rng);
             const int sy = pickY(rng);
             const size_t si
-                = (static_cast<size_t>(sy) * static_cast<size_t>(s.w)
+                = (static_cast<size_t>(sy) * static_cast<size_t>(w)
                       + static_cast<size_t>(sx))
-                * static_cast<size_t>(s.channels);
-            const unsigned char r = s.pixels[si + 0];
-            const unsigned char g = (s.channels >= 3) ? s.pixels[si + 1]
-                                                      : s.pixels[si + 0];
-            const unsigned char b = (s.channels >= 3) ? s.pixels[si + 2]
-                                                      : s.pixels[si + 0];
+                * static_cast<size_t>(channels);
+            const unsigned char r = pixels[si + 0];
+            const unsigned char g = (channels >= 3) ? pixels[si + 1]
+                                                      : pixels[si + 0];
+            const unsigned char b = (channels >= 3) ? pixels[si + 2]
+                                                      : pixels[si + 0];
 
             for (int ty = 0; ty < tile && y + ty < H; ++ty) {
                 for (int tx = 0; tx < tile && x + tx < W; ++tx) {
@@ -330,7 +329,7 @@ bool Image::generateSampledImageAtCenter()
         = stbi_write_png(filename, W, H, 3, out.data(), W * 3);
 
     // Cleanup
-    for (auto &s : loaded) {
+    for (const auto &s : loaded) {
         stbi_image_free(s.pixels);
     }
 
@@ -354,7 +353,7 @@ bool Image::generateSampledImageAtCenter()
 }
 
 void Image::startFrameExport(
-    std::function<void(bool success, const std::string &message)> callback)
+    const std::function<void(bool success, const std::string &message)>& callback)
 {
     if (m_exportSettings.frameCount <= 0) {
         setStatusMessage(
@@ -368,7 +367,7 @@ void Image::startFrameExport(
     // Start export directly in Image
     m_exportCurrentIndex = 0;
     m_exportCallback
-        = [this, callback](bool success, const std::string &message) {
+        = [this, callback](const bool success, const std::string &message) {
               setStatusMessage(message, 5.0f, !success);
               if (callback) {
                   callback(success, message);
@@ -377,7 +376,7 @@ void Image::startFrameExport(
     m_exportActive = true;
 }
 
-void Image::updateMessageTimer(float deltaTime)
+void Image::updateMessageTimer(const float deltaTime)
 {
     if (m_statusMessage.timer > 0.0f) {
         m_statusMessage.timer -= deltaTime;

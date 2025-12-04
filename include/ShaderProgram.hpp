@@ -76,7 +76,8 @@ public:
     void setVec3(const std::string &uniformName, const glm::vec3 vec3) const
     {
 #if DEBUG_UNIFORMS == 1
-        std::cout << "Set Uniform3f: " << uniformName << " = (" << vec3.x << "," << vec3.y << "," << vec3.z << ")" << std::endl;
+        std::cout << "Set Uniform3f: " << uniformName << " = (" << vec3.x
+                  << "," << vec3.y << "," << vec3.z << ")" << std::endl;
 #endif
         glUniform3f(glGetUniformLocation(m_shaderProgram, uniformName.c_str()),
             vec3.x, vec3.y, vec3.z);
@@ -85,7 +86,8 @@ public:
     void setVec2(const std::string &uniformName, const glm::vec2 vec2) const
     {
 #if DEBUG_UNIFORMS == 1
-        std::cout << "Set Uniform2f: " << uniformName << " = (" << vec2.x << "," << vec2.y << ")" << std::endl;
+        std::cout << "Set Uniform2f: " << uniformName << " = (" << vec2.x
+                  << "," << vec2.y << ")" << std::endl;
 #endif
         glUniform2f(glGetUniformLocation(m_shaderProgram, uniformName.c_str()),
             vec2.x, vec2.y);
@@ -111,7 +113,8 @@ public:
     void setBool(const std::string &uniformName, const bool value) const
     {
 #if DEBUG_UNIFORMS == 1
-        std::cout << "Set Uniform1i: " << uniformName << " = " << value << std::endl;
+        std::cout << "Set Uniform1i: " << uniformName << " = " << value
+                  << std::endl;
 #endif
         glUniform1i(
             glGetUniformLocation(m_shaderProgram, uniformName.c_str()), value);
@@ -120,7 +123,8 @@ public:
     void setInt(const std::string &uniformName, const int value) const
     {
 #if DEBUG_UNIFORMS == 1
-        std::cout << "Set Uniform1i: " << uniformName << " = " << value << std::endl;
+        std::cout << "Set Uniform1i: " << uniformName << " = " << value
+                  << std::endl;
 #endif
         glUniform1i(
             glGetUniformLocation(m_shaderProgram, uniformName.c_str()), value);
@@ -129,7 +133,8 @@ public:
     void setFloat(const std::string &uniformName, const float value) const
     {
 #if DEBUG_UNIFORMS == 1
-        std::cout << "Set Uniform1f: " << uniformName << " = " << value << std::endl;
+        std::cout << "Set Uniform1f: " << uniformName << " = " << value
+                  << std::endl;
 #endif
         glUniform1f(
             glGetUniformLocation(m_shaderProgram, uniformName.c_str()), value);

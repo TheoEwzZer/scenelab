@@ -29,10 +29,29 @@ void Light::init()
     m_primitiveType = PrimitiveType::Sphere;
     int sphereRadius = 1.0f;
 
-    m_gdata = GeometryGenerator::generateSphere(sphereRadius, 8, 16);
-    m_vertices = m_gdata.vertices;
+    m_gdata = GeometryGenerator::generateSphere(sphereRadius, 1, 1);
+    auto vertices = m_gdata.vertices;
 
     glGenVertexArrays(1, &VAO);
+    // Convert Vertex data to float array for path tracing
+    m_vertices.reserve(vertices.size() * 14);
+    for (const auto &v : vertices) {
+        m_vertices.push_back(v.position.x);
+        m_vertices.push_back(v.position.y);
+        m_vertices.push_back(v.position.z);
+        m_vertices.push_back(v.texCoord.x);
+        m_vertices.push_back(v.texCoord.y);
+        m_vertices.push_back(v.normal.x);
+        m_vertices.push_back(v.normal.y);
+        m_vertices.push_back(v.normal.z);
+        m_vertices.push_back(v.tangent.x);
+        m_vertices.push_back(v.tangent.y);
+        m_vertices.push_back(v.tangent.z);
+        m_vertices.push_back(v.bitangent.x);
+        m_vertices.push_back(v.bitangent.y);
+        m_vertices.push_back(v.bitangent.z);
+    }
+
     glGenBuffers(1, &VBO);
 
     glBindVertexArray(VAO);
@@ -109,6 +128,11 @@ void Light::setSpot(const glm::vec3 &color, float kc, float kl, float kq, float 
     updateEmissive();
 }
 
+Light::Type Light::getType() const
+{
+    return m_type;
+}
+
 std::string Light::getNameStr() const
 {
     switch (this->m_type) {
@@ -127,16 +151,19 @@ std::string Light::getNameStr() const
     return ("Light");
 }
 
-void Light::setUniforms(int uniformID, const ShaderProgram &lightingShader) const
+void Light::setUniforms(
+    int uniformID, const ShaderProgram &lightingShader) const
 {
     std::string uniformName;
 
-    glm::vec4 worldDir = modelMatrix * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);;
+    glm::vec4 worldDir = modelMatrix * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
+
     glm::vec3 dir = glm::normalize(glm::vec3(worldDir));
 
     switch (m_type) {
         case Directional:
-            uniformName = "directionalLights[" + std::to_string(uniformID) +  "].";
+            uniformName
+                = "directionalLights[" + std::to_string(uniformID) + "].";
             lightingShader.setVec3(uniformName + "direction", dir);
             lightingShader.setVec3(uniformName + "color", m_color * m_intensity);
             break;

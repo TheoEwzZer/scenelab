@@ -59,8 +59,12 @@ set(IMGUIFILEDIALOG_SOURCES
 include_directories(${IMGUIFILEDIALOG_DIR})
 
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/external/stb_image/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_executable(scenelab ${SOURCES} ${IMGUI_SOURCES} ${IMGUIZMO_SOURCES} ${IMGUIFILEDIALOG_SOURCES})
+
+target_include_directories(scenelab SYSTEM PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/stb_image/include
+)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     find_package(X11 REQUIRED)

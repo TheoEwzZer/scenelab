@@ -23,8 +23,11 @@
 #include "Image.hpp"
 #include "illumination/Illumination.hpp"
 #include "renderer/interface/IRenderer.hpp"
+#include "RenderableObject.hpp"
 #include "renderer/Window.hpp"
 #include "TextureManager.hpp"
+#include "shapes/ParametricCurve.hpp"
+#include "DynamicGeometryManager.hpp"
 #include "imgui.h"
 
 class RasterizationRenderer;
@@ -44,6 +47,7 @@ class App {
     bool m_showImageWindow = true;
     bool m_showVectorWindow = true;
     bool m_showHierarchyWindow = true;
+    bool m_showIlluminationWindow = true;
 
 private:
     Window m_window;
@@ -51,10 +55,13 @@ private:
     CameraManager m_camera;
 
     // Feature managers
+    std::unique_ptr<DynamicGeometryManager> m_parametricCurveManager;
     std::unique_ptr<GeometryManager> m_geometryManager;
     std::unique_ptr<TransformManager> m_transformManager;
     std::unique_ptr<CameraController> m_cameraController;
     std::unique_ptr<TextureManager> m_textureManager;
+    std::vector<std::pair<GameObject *, std::unique_ptr<RenderableObject>>>
+        m_helperObjects; // Stored when switching to path tracing
 
     void init();
     void update();

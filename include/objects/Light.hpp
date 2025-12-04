@@ -11,8 +11,8 @@
 #include "objects/AnalyticalSphere.hpp"
 
 class Light : public RenderableObject {
-    public:
-    enum Type {Directional, Point, Spot, TypeEnd};
+public:
+    enum Type { Directional, Point, Spot, TypeEnd };
 
     Light();
 
@@ -22,7 +22,6 @@ class Light : public RenderableObject {
     void setPoint(const glm::vec3 &color, float kc = 0.5f, float kl = 0.09f, float kq = 1.0f, float intensity = 1.0f);
     void setSpot(const glm::vec3 &color, float kc = 0.5f, float kl = 0.09f, float kq = 0.03f, float p = 10.0f, float intensity = 1.0f);
 
-    Type getType(void) const {return m_type;};
     std::string getNameStr() const;
 
     void setUniforms(int uniformID, const ShaderProgram &lightingShader) const;
@@ -33,9 +32,12 @@ class Light : public RenderableObject {
         const TextureLibrary &textures) const override;
 
     void setIntensity(float intensity);
+
     float getIntensity() const { return m_intensity; }
 
     GData &getGData();
+
+    Type getType() const;
 
 protected:
     void init();
