@@ -99,6 +99,7 @@ void App::init()
               sphere->setPercentSpecular(specular);
               sphere->setRoughness(roughness);
               sphere->setSpecularColor(specColor);
+              sphere->setAmbientColor(specColor * 0.2f);
               sphere->setEmissive(emissive);
               sphere->setIndexOfRefraction(ior);
               sphere->setRefractionChance(refractionChance);
@@ -113,23 +114,20 @@ void App::init()
               node->getData().setAABB(glm::vec3(-radius), glm::vec3(radius));
               m_sceneGraph.getRoot()->addChild(std::move(node));
           };
-    auto createLight
+        auto createLight
         = [this](glm::vec3 color, glm::vec3 pos, float intensity = 1.0f) {
               auto light = std::make_unique<Light>();
-              light->setPoint(color);
-              light->setIntensity(intensity);
+              light->setPoint(color, 0.5, 0.09, 1.0, intensity);
               std::unique_ptr<SceneGraph::Node> lightNode
                   = std::make_unique<SceneGraph::Node>();
               lightNode->getData().setName(light->getNameStr());
               lightNode->getData().rendererId
                   = m_renderer->registerObject(std::move(light), "");
-              // lightNode->getData().setAABB(
-              //     light->getGData().aabbCorner1,
-              //     light->getGData().aabbCorner2);
               lightNode->getData().setScale(glm::vec3(0.2f));
               lightNode->getData().setPosition(pos);
               m_sceneGraph.getRoot()->addChild(std::move(lightNode));
           };
+
 
     // Ground plane (reflective dark surface)
     {
@@ -138,6 +136,7 @@ void App::init()
         plane->setPercentSpecular(0.4f);
         plane->setRoughness(0.05f);
         plane->setSpecularColor(glm::vec3(0.8f));
+        plane->setAmbientColor(glm::vec3(0.8f) * 0.2f);
 
         std::unique_ptr<SceneGraph::Node> node
             = std::make_unique<SceneGraph::Node>();
@@ -157,6 +156,7 @@ void App::init()
             glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.9f, 0.9f, 0.9f));
         plane->setPercentSpecular(0.0f);
         plane->setRoughness(1.0f);
+        plane->setAmbientColor(glm::vec3(0.0f));
 
         std::unique_ptr<SceneGraph::Node> node
             = std::make_unique<SceneGraph::Node>();
@@ -178,6 +178,7 @@ void App::init()
             glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.9f, 0.1f, 0.1f));
         plane->setPercentSpecular(0.0f);
         plane->setRoughness(1.0f);
+        plane->setAmbientColor(glm::vec3(1,0,0) * 0.2f);
 
         std::unique_ptr<SceneGraph::Node> node
             = std::make_unique<SceneGraph::Node>();
@@ -197,6 +198,7 @@ void App::init()
             glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.1f, 0.9f, 0.1f));
         plane->setPercentSpecular(0.0f);
         plane->setRoughness(1.0f);
+        plane->setAmbientColor(glm::vec3(0,1,1) * 0.2f);
 
         std::unique_ptr<SceneGraph::Node> node
             = std::make_unique<SceneGraph::Node>();
@@ -216,6 +218,7 @@ void App::init()
             glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.95f, 0.95f, 0.95f));
         plane->setPercentSpecular(0.0f);
         plane->setRoughness(1.0f);
+        plane->setAmbientColor(glm::vec3(1,1,1) * 0.2f);
 
         std::unique_ptr<SceneGraph::Node> node
             = std::make_unique<SceneGraph::Node>();
@@ -248,10 +251,10 @@ void App::init()
 
     // === MAIN LIGHT SOURCES ===
 
-    createLight(glm::vec3(1.0f, 0.95f, 0.9f), glm::vec3(0.0f, 4.0f, 0.0f), 3);
+    createLight(glm::vec3(1.0f, 0.95f, 0.9f), glm::vec3(0.0f, 4.0f, 0.0f), 5);
     createLight(
-        glm::vec3(0.7f, 0.85f, 1.0f), glm::vec3(-4.0f, 2.5f, 2.0f), 0.75);
-    createLight(glm::vec3(1.0f, 0.6f, 0.3f), glm::vec3(4.0f, 2.0f, 1.0f), 0.5);
+        glm::vec3(0.7f, 0.85f, 1.0f), glm::vec3(-4.0f, 2.5f, 2.0f), 1);
+    createLight(glm::vec3(1.0f, 0.6f, 0.3f), glm::vec3(4.0f, 2.0f, 1.0f), 0.75);
 
     // === METALLIC SPHERES ===
 

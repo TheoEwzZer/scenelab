@@ -221,6 +221,8 @@ public:
 
     void setSpecularColor(const glm::vec3 &color) { m_mat.m_specularColor = color; }
 
+    void setAmbientColor(const glm::vec3 &color) { m_mat.m_ambientColor = color; }
+
     [[nodiscard]] glm::vec3 getSpecularColor() const
     {
         return m_mat.m_specularColor;
