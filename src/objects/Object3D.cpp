@@ -109,20 +109,17 @@ void Object3D::draw([[maybe_unused]] const ShaderProgram &vectorial,
         : glm::vec2(0.0f);
     lighting.setVec2("texelSize", texelSize);
 
-    if (texture) {
-        if (texture->target == TextureTarget::Texture2D) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture->id);
-        }
+    glActiveTexture(GL_TEXTURE0);
+    if (texture && texture->target == TextureTarget::Texture2D) {
+        glBindTexture(GL_TEXTURE_2D, texture->id);
     } else {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    glActiveTexture(GL_TEXTURE1);
     if (normalMap) {
-        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMap->id);
     } else {
-        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
